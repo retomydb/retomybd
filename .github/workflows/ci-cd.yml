@@ -183,7 +183,7 @@ jobs:
             VITE_APP_NAME=retomY
 
   # ═════════════════════════════════════════════════════════
-  # 4. Run DB Migrations
+  # 4. Run DB Migrations (only when DB secrets are configured)
   # ═════════════════════════════════════════════════════════
   migrate:
     name: "Run DB Migrations"
@@ -194,12 +194,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check DB secrets
+        id: db-check
+        run: |
+          if [ -z "${{ secrets.MSSQL_HOST }}" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "⚠️  MSSQL_HOST secret not configured — skipping migrations."
+            echo "   Configure repository secrets (MSSQL_HOST, MSSQL_PORT, MSSQL_USER, MSSQL_PASSWORD, MSSQL_DATABASE) to enable."
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "✅ DB secrets found — will run migrations."
+          fi
+
       - name: Setup Python
+        if: steps.db-check.outputs.skip == 'false'
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Install ODBC Driver 18
+        if: steps.db-check.outputs.skip == 'false'
         run: |
           curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc > /dev/null
           curl -fsSL https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/prod.list | sudo tee /etc/apt/sources.list.d/mssql-release.list > /dev/null
@@ -207,10 +221,12 @@ jobs:
           sudo ACCEPT_EULA=Y apt-get install -y msodbcsql18 unixodbc-dev
 
       - name: Install migration dependencies
+        if: steps.db-check.outputs.skip == 'false'
         run: |
           pip install pyodbc python-dotenv
 
       - name: Run migrations
+        if: steps.db-check.outputs.skip == 'false'
         run: python database/migrate.py
         env:
           MSSQL_HOST: ${{ secrets.MSSQL_HOST }}

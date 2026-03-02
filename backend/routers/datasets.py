@@ -14,10 +14,36 @@ from core.config import get_settings
 import structlog
 import uuid
 import json
+from urllib.parse import urlparse
 
 logger = structlog.get_logger()
 settings = get_settings()
 router = APIRouter(prefix="/datasets", tags=["Datasets"])
+
+
+def _refresh_thumbnail_url(url: str | None) -> str | None:
+    """Regenerate SAS token for a stored thumbnail URL so it stays valid."""
+    if not url or not url.startswith("http"):
+        return url
+    try:
+        parsed = urlparse(url)
+        # Path looks like: /devstoreaccount1/thumbnails/<id>/thumb.png
+        parts = parsed.path.lstrip("/").split("/", 1)  # ['devstoreaccount1', 'thumbnails/…']
+        if len(parts) == 2:
+            remainder = parts[1]  # 'thumbnails/<id>/thumb.png'
+            container_and_blob = remainder.split("/", 1)
+            if len(container_and_blob) == 2:
+                return generate_presigned_url(container_and_blob[0], container_and_blob[1], expiry_hours=24)
+    except Exception:
+        pass
+    return url
+
+
+def _refresh_thumbnails_in_list(items: list[dict]) -> None:
+    """Refresh ThumbnailUrl SAS tokens for a list of dataset dicts in-place."""
+    for d in items:
+        if "ThumbnailUrl" in d:
+            d["ThumbnailUrl"] = _refresh_thumbnail_url(d["ThumbnailUrl"])
 
 
 @router.get("")
@@ -57,6 +83,8 @@ async def search_datasets(
                 elif hasattr(v, "__float__"):
                     d[k] = float(v)
 
+        _refresh_thumbnails_in_list(datasets)
+
         return {
             "datasets": datasets,
             "total_count": total_count,
@@ -84,10 +112,17 @@ async def get_homepage_data():
                         d[k] = float(v)
             return items
 
+        featured = serialize_list(results[0]) if len(results) > 0 else []
+        trending = serialize_list(results[1]) if len(results) > 1 else []
+        new_arrivals = serialize_list(results[2]) if len(results) > 2 else []
+        _refresh_thumbnails_in_list(featured)
+        _refresh_thumbnails_in_list(trending)
+        _refresh_thumbnails_in_list(new_arrivals)
+
         return {
-            "featured": serialize_list(results[0]) if len(results) > 0 else [],
-            "trending": serialize_list(results[1]) if len(results) > 1 else [],
-            "new_arrivals": serialize_list(results[2]) if len(results) > 2 else [],
+            "featured": featured,
+            "trending": trending,
+            "new_arrivals": new_arrivals,
             "categories": serialize_list(results[3]) if len(results) > 3 else [],
             "platform_stats": results[4][0] if len(results) > 4 and results[4] else {},
         }
@@ -149,6 +184,10 @@ async def get_dataset_detail(
             parts = dataset["SampleBlobPath"].split("/", 1)
             if len(parts) == 2:
                 dataset["sample_url"] = generate_presigned_url(parts[0], parts[1])
+
+        # Refresh thumbnail SAS token
+        if "ThumbnailUrl" in dataset:
+            dataset["ThumbnailUrl"] = _refresh_thumbnail_url(dataset["ThumbnailUrl"])
 
         return {
             "dataset": dataset,

@@ -5,11 +5,29 @@ from fastapi import APIRouter, HTTPException, Depends, Request, Query
 from models.schemas import PurchaseRequest, CartItemRequest, MessageResponse
 from core.security import get_current_user
 from core.database import execute_sp, execute_query
-from core.storage import generate_presigned_url
+from core.storage import generate_presigned_url, CONTAINER_THUMBNAILS
+from urllib.parse import urlparse
 import structlog
 
 logger = structlog.get_logger()
 router = APIRouter(prefix="/purchases", tags=["Purchases & Cart"])
+
+
+def _refresh_thumbnail_url(url: str | None) -> str | None:
+    """Regenerate SAS token for a stored thumbnail URL."""
+    if not url or not url.startswith("http"):
+        return url
+    try:
+        parsed = urlparse(url)
+        parts = parsed.path.lstrip("/").split("/", 1)
+        if len(parts) == 2:
+            remainder = parts[1]
+            container_and_blob = remainder.split("/", 1)
+            if len(container_and_blob) == 2:
+                return generate_presigned_url(container_and_blob[0], container_and_blob[1], expiry_hours=24)
+    except Exception:
+        pass
+    return url
 
 
 @router.post("")
@@ -102,6 +120,8 @@ async def get_my_purchases(
                 p[k] = v.isoformat()
             elif hasattr(v, "__float__"):
                 p[k] = float(v)
+        if "ThumbnailUrl" in p:
+            p["ThumbnailUrl"] = _refresh_thumbnail_url(p["ThumbnailUrl"])
 
     return {"purchases": purchases}
 

@@ -32,7 +32,7 @@ class Settings(BaseSettings):
 
     # Azure Storage (Azurite)
     AZURE_STORAGE_ACCOUNT_NAME: str = "devstoreaccount1"
-    AZURE_STORAGE_ACCOUNT_KEY: str = "Eby8vdM02xNOcqFeqCnf2P=="
+    AZURE_STORAGE_ACCOUNT_KEY: str = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
     AZURE_STORAGE_CONNECTION_STRING: str = ""
     AZURE_BLOB_ENDPOINT: str = "http://127.0.0.1:10000/devstoreaccount1"
     AZURE_QUEUE_ENDPOINT: str = "http://127.0.0.1:10001/devstoreaccount1"

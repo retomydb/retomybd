@@ -1,0 +1,132 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #171a21;
+    color: #c7d5e0;
+    min-height: 100vh;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #171a21;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #2a475e;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #66c0f4;
+  }
+
+  ::selection {
+    background-color: rgba(102, 192, 244, 0.3);
+    color: #ffffff;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-retomy-accent hover:bg-retomy-accent-hover text-retomy-bg font-semibold 
+           px-6 py-2.5 rounded-sm transition-all duration-200
+           shadow-md hover:shadow-glow active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply bg-retomy-bg-hover hover:bg-retomy-border text-retomy-text font-medium
+           px-6 py-2.5 rounded-sm transition-all duration-200 border border-retomy-border;
+  }
+
+  .btn-success {
+    @apply bg-retomy-green hover:bg-retomy-green-light text-white font-semibold
+           px-6 py-2.5 rounded-sm transition-all duration-200;
+  }
+
+  .btn-danger {
+    @apply bg-retomy-red hover:bg-red-700 text-white font-semibold
+           px-6 py-2.5 rounded-sm transition-all duration-200;
+  }
+
+  .card {
+    @apply bg-retomy-bg-card rounded shadow-card hover:shadow-card-hover 
+           transition-all duration-300 border border-retomy-border/30;
+  }
+
+  .card-hover {
+    @apply card hover:border-retomy-accent/40 hover:translate-y-[-2px];
+  }
+
+  .input-field {
+    @apply w-full bg-retomy-bg border border-retomy-border rounded-sm px-4 py-2.5
+           text-retomy-text placeholder-retomy-text-secondary
+           focus:outline-none focus:border-retomy-accent focus:ring-1 focus:ring-retomy-accent/30
+           transition-all duration-200;
+  }
+
+  .label {
+    @apply text-sm font-medium text-retomy-text-secondary mb-1.5 block;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-accent {
+    @apply badge bg-retomy-accent/20 text-retomy-accent;
+  }
+
+  .badge-green {
+    @apply badge bg-retomy-green/20 text-retomy-green-light;
+  }
+
+  .badge-gold {
+    @apply badge bg-retomy-gold/20 text-retomy-gold;
+  }
+
+  .section-title {
+    @apply text-xl font-bold text-retomy-text-bright uppercase tracking-wider;
+  }
+
+  .page-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6;
+  }
+
+  .nav-link {
+    @apply text-retomy-text-secondary hover:text-retomy-text-bright transition-colors
+           duration-200 text-sm font-medium uppercase tracking-wide;
+  }
+
+  .nav-link-active {
+    @apply text-retomy-text-bright border-b-2 border-retomy-accent;
+  }
+
+  .price-tag {
+    @apply text-retomy-green-light font-bold;
+  }
+
+  .price-tag-free {
+    @apply text-retomy-accent font-bold;
+  }
+
+  .stat-value {
+    @apply text-2xl font-bold text-retomy-text-bright;
+  }
+
+  .stat-label {
+    @apply text-xs uppercase tracking-wider text-retomy-text-secondary mt-1;
+  }
+}

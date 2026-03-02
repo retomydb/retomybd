@@ -1,0 +1,59 @@
+# =============================================================================
+# retomY — Enterprise Dataset Marketplace
+# =============================================================================
+
+# ── Environment & Secrets ────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Python ───────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+*.egg
+dist/
+build/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.log
+
+# ── Node / Frontend ─────────────────────────────────────
+node_modules/
+frontend/dist/
+frontend/.vite/
+.vite/
+*.tsbuildinfo
+
+# ── IDE ─────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Docker ──────────────────────────────────────────────
+docker-compose.override.yml
+
+# ── Uploaded Content (user data, not source code) ───────
+backend/static/avatars/
+backend/static/datasets/
+backend/static/thumbnails/
+backend/static/samples/
+
+# ── Test / Temp ─────────────────────────────────────────
+test_upload.py
+tools/
+*.tmp
+*.bak

@@ -1,0 +1,85 @@
+# =============================================================================
+# retomY — Docker Compose (Production)
+# =============================================================================
+version: "3.9"
+
+services:
+  # ─── Backend API ───────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: retomy-backend
+    ports:
+      - "${API_PORT:-8000}:8000"
+    env_file:
+      - .env
+    environment:
+      - MSSQL_HOST=${MSSQL_HOST:-host.docker.internal}
+      - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - retomy-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ─── Frontend (Nginx + React SPA) ─────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api/v1}
+        VITE_APP_NAME: ${VITE_APP_NAME:-retomY}
+    container_name: retomy-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - retomy-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ─── DB Migrations (run once) ──────────────────────────
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: retomy-migrate
+    env_file:
+      - .env
+    environment:
+      - MSSQL_HOST=${MSSQL_HOST:-host.docker.internal}
+    volumes:
+      - ./database:/migrations:ro
+    command: ["python", "/migrations/migrate.py"]
+    depends_on: []
+    networks:
+      - retomy-network
+    restart: "no"
+
+networks:
+  retomy-network:
+    driver: bridge

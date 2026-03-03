@@ -47,9 +47,9 @@ export default function WishlistPage() {
       {datasets.length === 0 ? (
         <div className="card p-12 text-center">
           <FiHeart className="mx-auto text-retomy-text-secondary mb-3" size={48} />
-          <h2 className="text-lg font-semibold text-retomy-text-bright mb-2">No wishlisted datasets</h2>
-          <p className="text-sm text-retomy-text-secondary mb-4">Save datasets you're interested in for later.</p>
-          <Link to="/browse" className="btn-primary">Browse Datasets</Link>
+          <h2 className="text-lg font-semibold text-retomy-text-bright mb-2">No wishlisted data</h2>
+          <p className="text-sm text-retomy-text-secondary mb-4">Save data you're interested in for later.</p>
+          <Link to="/browse" className="btn-primary">Browse Data</Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

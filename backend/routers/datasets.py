@@ -15,6 +15,7 @@ import structlog
 import uuid
 import json
 from urllib.parse import urlparse
+import re
 
 logger = structlog.get_logger()
 settings = get_settings()
@@ -207,6 +208,9 @@ async def create_dataset(
 ):
     """Create a new dataset listing."""
     try:
+        # Enforce full description minimum word count on creation
+        if not body.full_description or len(re.findall(r"\w+", body.full_description)) < 100:
+            raise HTTPException(status_code=400, detail="Full description must be at least 100 words")
         dataset = execute_sp("retomy.sp_CreateDataset", {
             "SellerId": str(user["UserId"]),
             "Title": body.title,
@@ -455,7 +459,7 @@ async def publish_dataset(
     user_id = str(user["UserId"])
 
     dataset = execute_query(
-        "SELECT SellerId, Status, FullBlobPath FROM retomy.Datasets WHERE DatasetId = ? AND DeletedAt IS NULL",
+        "SELECT SellerId, Status, FullBlobPath, FullDescription FROM retomy.Datasets WHERE DatasetId = ? AND DeletedAt IS NULL",
         [dataset_id], fetch="one"
     )
     if not dataset:
@@ -464,6 +468,11 @@ async def publish_dataset(
         raise HTTPException(status_code=403, detail="Not authorized")
 
     new_status = "published" if user["Role"] in ("admin", "superadmin") else "pending_review"
+
+    # Require a full description of at least 100 words before allowing publish/submit for review
+    full_desc = dataset.get("FullDescription") if dataset else None
+    if not full_desc or len(re.findall(r"\w+", full_desc)) < 100:
+        raise HTTPException(status_code=400, detail="Full description must be at least 100 words before publishing")
 
     execute_query(
         "UPDATE retomy.Datasets SET Status = ?, PublishedAt = CASE WHEN ? = 'published' THEN SYSUTCDATETIME() ELSE PublishedAt END, UpdatedAt = SYSUTCDATETIME() WHERE DatasetId = ?",

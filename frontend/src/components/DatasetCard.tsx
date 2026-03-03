@@ -1,5 +1,49 @@
 import { Link } from 'react-router-dom';
-import { FiStar, FiDownload, FiShoppingCart, FiHeart } from 'react-icons/fi';
+import { FiStar, FiDownload, FiShoppingCart, FiHeart, FiFile, FiFileText, FiImage, FiDatabase } from 'react-icons/fi';
+import {
+  SiPython,
+  SiApacheparquet,
+} from 'react-icons/si';
+import {
+  BsFiletypeCsv,
+  BsFiletypePdf,
+  BsFiletypeXml,
+  BsFiletypeSql,
+  BsFiletypeXlsx,
+  BsFiletypeJson,
+} from 'react-icons/bs';
+import type { IconType } from 'react-icons';
+import { formatOwner } from '../utils/name';
+import { truncateWords } from '../utils/text';
+
+/** Map file format string to an icon component + colour */
+function getFormatIcon(format: string): { Icon: IconType; color: string; label: string } {
+  const f = (format || '').toLowerCase().trim();
+  if (['xlsx', 'xls', 'excel'].includes(f))
+    return { Icon: BsFiletypeXlsx, color: '#217346', label: 'Excel' };
+  if (['csv', 'tsv'].includes(f))
+    return { Icon: BsFiletypeCsv, color: '#4CAF50', label: 'CSV' };
+  if (f === 'pdf')
+    return { Icon: BsFiletypePdf, color: '#E53935', label: 'PDF' };
+  if (['parquet', 'pq'].includes(f))
+    return { Icon: SiApacheparquet, color: '#50ABF1', label: 'Parquet' };
+  if (['json', 'jsonl', 'ndjson'].includes(f))
+    return { Icon: BsFiletypeJson, color: '#F5A623', label: 'JSON' };
+  if (f === 'xml')
+    return { Icon: BsFiletypeXml, color: '#FF6D00', label: 'XML' };
+  if (['sql', 'sqlite', 'db'].includes(f))
+    return { Icon: BsFiletypeSql, color: '#00758F', label: 'SQL' };
+  if (['py', 'python', 'pkl', 'pickle'].includes(f))
+    return { Icon: SiPython, color: '#3776AB', label: 'Python' };
+  if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp', 'tiff'].includes(f))
+    return { Icon: FiImage, color: '#AB47BC', label: f.toUpperCase() };
+  if (['txt', 'md', 'text', 'log'].includes(f))
+    return { Icon: FiFileText, color: '#78909C', label: 'Text' };
+  if (['hdf5', 'h5', 'hdf', 'nc', 'netcdf'].includes(f))
+    return { Icon: FiDatabase, color: '#607D8B', label: f.toUpperCase() };
+  // fallback
+  return { Icon: FiFile, color: '#90A4AE', label: f ? f.toUpperCase() : 'DATA' };
+}
 
 interface DatasetCardProps {
   dataset: any;
@@ -19,51 +63,35 @@ export default function DatasetCard({ dataset, onAddToCart, onToggleWishlist }: 
     return n?.toString() || '0';
   };
 
+  const { Icon: FormatIcon, color: iconColor, label: formatLabel } = getFormatIcon(
+    dataset.FileFormat || dataset.file_format || ''
+  );
+
   return (
     <div className="card-hover group overflow-hidden">
-      {/* Thumbnail */}
-      <Link to={`/dataset/${dataset.DatasetId || dataset.dataset_id}`}>
-        <div className="relative h-36 bg-retomy-surface overflow-hidden">
-          {dataset.ThumbnailUrl || dataset.thumbnail_url ? (
-            <img
-              src={dataset.ThumbnailUrl || dataset.thumbnail_url}
-              alt={dataset.Title || dataset.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-retomy-bg-hover to-retomy-bg-card flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-retomy-accent/30 uppercase">
-                  {(dataset.FileFormat || dataset.file_format || 'DATA').toUpperCase()}
-                </div>
-                <div className="text-xs text-retomy-text-secondary mt-1">Dataset</div>
+      {/* Content with inline thumbnail */}
+      <div className="p-4">
+        <div className="flex items-start gap-3">
+          <Link to={`/dataset/${dataset.DatasetId || dataset.dataset_id}`} className="flex-shrink-0">
+            <div className="relative w-6 h-6">
+              <div className="w-full h-full flex items-center justify-center">
+                <FiDatabase size={14} style={{ color: '#607D8B' }} />
               </div>
             </div>
-          )}
-          {(dataset.IsFeatured || dataset.is_featured) && (
-            <div className="absolute top-2 left-2 bg-retomy-gold text-retomy-bg text-xs font-bold px-2 py-0.5 rounded-sm">
-              FEATURED
-            </div>
-          )}
-          {dataset.PricingModel === 'free' || dataset.pricing_model === 'free' ? (
-            <div className="absolute top-2 right-2 bg-retomy-accent text-retomy-bg text-xs font-bold px-2 py-0.5 rounded-sm">
-              FREE
-            </div>
-          ) : null}
+          </Link>
+
+          <div className="min-w-0">
+            <Link to={`/dataset/${dataset.DatasetId || dataset.dataset_id}`}>
+              <h3 className="font-semibold text-retomy-text-bright text-sm truncate group-hover:text-retomy-accent transition-colors">
+                {dataset.Title || dataset.title}
+              </h3>
+            </Link>
+
+            <p className="text-xs text-retomy-text-secondary mt-1 line-clamp-2">
+              {truncateWords(dataset.ShortDescription || dataset.short_description, 16)}
+            </p>
+          </div>
         </div>
-      </Link>
-
-      {/* Content */}
-      <div className="p-4">
-        <Link to={`/dataset/${dataset.DatasetId || dataset.dataset_id}`}>
-          <h3 className="font-semibold text-retomy-text-bright text-sm truncate group-hover:text-retomy-accent transition-colors">
-            {dataset.Title || dataset.title}
-          </h3>
-        </Link>
-
-        <p className="text-xs text-retomy-text-secondary mt-1 line-clamp-2 h-8">
-          {dataset.ShortDescription || dataset.short_description}
-        </p>
 
         {/* Meta */}
         <div className="flex items-center gap-3 mt-3 text-xs text-retomy-text-secondary">
@@ -88,7 +116,7 @@ export default function DatasetCard({ dataset, onAddToCart, onToggleWishlist }: 
         <div className="flex items-center gap-1 mt-2 text-xs text-retomy-text-secondary">
           <span>by</span>
           <span className="text-retomy-accent hover:underline cursor-pointer">
-            {dataset.SellerName || dataset.seller_name || 'Unknown'}
+            {formatOwner(dataset.SellerName || dataset.seller_name)}
           </span>
           {(dataset.IsSellerVerified || dataset.is_seller_verified) && (
             <span className="text-retomy-accent" title="Verified Seller">✓</span>
@@ -96,8 +124,8 @@ export default function DatasetCard({ dataset, onAddToCart, onToggleWishlist }: 
         </div>
 
         {/* Price + Actions */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-retomy-border/20">
-          <div className="text-lg font-bold">
+        <div className="flex items-center justify-between mt-2 pt-2 border-t border-retomy-border/20">
+          <div className="text-sm font-semibold">
             {formatPrice(dataset.Price ?? dataset.price ?? 0, dataset.PricingModel || dataset.pricing_model || 'one-time')}
           </div>
           <div className="flex items-center gap-2">
@@ -120,6 +148,11 @@ export default function DatasetCard({ dataset, onAddToCart, onToggleWishlist }: 
               </button>
             )}
           </div>
+        </div>
+
+        {/* Fancy centered divider */}
+        <div className="mt-3 flex justify-center">
+          <div className="h-px w-11/12 max-w-[280px] bg-gradient-to-r from-transparent via-retomy-border/40 to-transparent" />
         </div>
       </div>
     </div>

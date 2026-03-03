@@ -21,6 +21,10 @@ import NotificationsPage from './pages/NotificationsPage';
 import DatasetManagePage from './pages/DatasetManagePage';
 import CheckoutSuccessPage from './pages/CheckoutSuccessPage';
 import CheckoutCancelPage from './pages/CheckoutCancelPage';
+import AboutPage from './pages/AboutPage';
+import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
+import ContactPage from './pages/ContactPage';
 
 // Layout with Navbar + Footer
 function Layout() {
@@ -145,6 +149,10 @@ function AppInner() {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/browse" element={<BrowsePage />} />
           <Route path="/dataset/:id" element={<DatasetDetailPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/contact" element={<ContactPage />} />
           <Route path="/dataset/:id/manage" element={
             <PrivateRoute><ErrorBoundary><DatasetManagePage /></ErrorBoundary></PrivateRoute>
           } />

@@ -141,7 +141,7 @@ export default function DatasetManagePage() {
     try {
       const { data } = await datasetsApi.publish(id!);
       toast.success(data.message || 'Dataset published!');
-      loadAll();
+      navigate('/dashboard');
     } catch (e: any) {
       toast.error(getApiError(e, 'Failed to publish'));
     }

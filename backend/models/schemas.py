@@ -109,6 +109,17 @@ class CreateDatasetRequest(BaseModel):
             raise ValueError("Invalid pricing model")
         return v
 
+    @field_validator("full_description")
+    @classmethod
+    def validate_full_description(cls, v):
+        if v is None:
+            return v
+        # Count words conservatively
+        words = len(re.findall(r"\w+", v))
+        if words < 100:
+            raise ValueError("Full description must be at least 100 words")
+        return v
+
 
 class UpdateDatasetRequest(BaseModel):
     title: Optional[str] = Field(None, max_length=300)

@@ -17,7 +17,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-sm text-retomy-text-secondary leading-relaxed">
-              The enterprise marketplace for datasets. Buy, sell, and discover data at scale.
+              The marketplace for data. Buy, sell, and discover data at scale.
             </p>
             <div className="flex items-center gap-4 mt-4">
               <a href="#" className="text-retomy-text-secondary hover:text-retomy-accent transition-colors"><FiTwitter size={18} /></a>
@@ -30,9 +30,9 @@ export default function Footer() {
           <div>
             <h4 className="text-sm font-semibold text-retomy-text-bright uppercase tracking-wider mb-4">Marketplace</h4>
             <div className="space-y-2">
-              <Link to="/browse" className="block text-sm text-retomy-text-secondary hover:text-retomy-text-bright transition-colors">Browse Datasets</Link>
+              <Link to="/browse" className="block text-sm text-retomy-text-secondary hover:text-retomy-text-bright transition-colors">Browse Data</Link>
               <Link to="/browse?sort_by=downloads" className="block text-sm text-retomy-text-secondary hover:text-retomy-text-bright transition-colors">Popular</Link>
-              <Link to="/browse?pricing_model=free" className="block text-sm text-retomy-text-secondary hover:text-retomy-text-bright transition-colors">Free Datasets</Link>
+              <Link to="/browse?pricing_model=free" className="block text-sm text-retomy-text-secondary hover:text-retomy-text-bright transition-colors">Free Data</Link>
               <Link to="/browse" className="block text-sm text-retomy-text-secondary hover:text-retomy-text-bright transition-colors">Categories</Link>
             </div>
           </div>
@@ -52,10 +52,10 @@ export default function Footer() {
           <div>
             <h4 className="text-sm font-semibold text-retomy-text-bright uppercase tracking-wider mb-4">Company</h4>
             <div className="space-y-2">
-              <a href="#" className="block text-sm text-retomy-text-secondary hover:text-retomy-text-bright transition-colors">About Us</a>
-              <a href="#" className="block text-sm text-retomy-text-secondary hover:text-retomy-text-bright transition-colors">Terms of Service</a>
-              <a href="#" className="block text-sm text-retomy-text-secondary hover:text-retomy-text-bright transition-colors">Privacy Policy</a>
-              <a href="#" className="block text-sm text-retomy-text-secondary hover:text-retomy-text-bright transition-colors">Contact Support</a>
+              <Link to="/about" className="block text-sm text-retomy-text-secondary hover:text-retomy-text-bright transition-colors">About Us</Link>
+              <Link to="/terms" className="block text-sm text-retomy-text-secondary hover:text-retomy-text-bright transition-colors">Terms of Service</Link>
+              <Link to="/privacy" className="block text-sm text-retomy-text-secondary hover:text-retomy-text-bright transition-colors">Privacy Policy</Link>
+              <Link to="/contact" className="block text-sm text-retomy-text-secondary hover:text-retomy-text-bright transition-colors">Contact Support</Link>
             </div>
           </div>
         </div>
@@ -65,7 +65,7 @@ export default function Footer() {
             &copy; {new Date().getFullYear()} retomY Inc. All rights reserved.
           </p>
           <p className="text-xs text-retomy-text-secondary">
-            Enterprise Dataset Marketplace — v1.0.0
+            Data Marketplace — v1.0.0
           </p>
         </div>
       </div>

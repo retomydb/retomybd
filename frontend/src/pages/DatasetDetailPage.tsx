@@ -8,6 +8,8 @@ import {
   FiCalendar, FiDatabase, FiFile, FiLock, FiShield,
   FiUser, FiCheck, FiArrowLeft
 } from 'react-icons/fi';
+import { formatOwner } from '../utils/name';
+import PreviewPane from '../components/PreviewPane';
 
 export default function DatasetDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -164,16 +166,12 @@ export default function DatasetDetailPage() {
           {/* Hero / Banner */}
           <div className="card overflow-hidden">
             <div className="h-56 bg-gradient-to-br from-retomy-bg-hover to-retomy-surface flex items-center justify-center">
-              {dataset.BannerUrl || dataset.ThumbnailUrl ? (
-                <img src={dataset.BannerUrl || dataset.ThumbnailUrl} alt={dataset.Title} className="w-full h-full object-cover" />
-              ) : (
-                <div className="text-center">
-                  <FiDatabase className="mx-auto text-retomy-accent/20 mb-2" size={48} />
-                  <span className="text-lg text-retomy-accent/40 uppercase font-bold">
-                    {dataset.FileFormat || 'Dataset'}
-                  </span>
-                </div>
-              )}
+              <div className="text-center">
+                <FiDatabase className="mx-auto text-retomy-accent/20 mb-2" size={48} />
+                <span className="text-lg text-retomy-accent/40 uppercase font-bold">
+                  {dataset.FileFormat || 'Dataset'}
+                </span>
+              </div>
             </div>
 
             <div className="p-6">
@@ -208,7 +206,7 @@ export default function DatasetDetailPage() {
           {/* Tabs */}
           <div className="border-b border-retomy-border/30">
             <div className="flex gap-6">
-              {['overview', 'schema', 'reviews', 'license'].map(tab => (
+              {['overview', 'preview', 'schema', 'reviews', 'license'].map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -243,6 +241,12 @@ export default function DatasetDetailPage() {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {activeTab === 'preview' && (
+              <div>
+                <PreviewPane datasetId={id} dataset={dataset} rows={5} />
               </div>
             )}
 
@@ -352,7 +356,7 @@ export default function DatasetDetailPage() {
         <div className="space-y-4">
           {/* Purchase Card */}
           <div className="card p-6 sticky top-20">
-            <div className="text-3xl font-extrabold text-retomy-text-bright mb-1">
+            <div className="text-sm font-semibold text-retomy-text-bright mb-1">
               {dataset.Price === 0 || dataset.PricingModel === 'free' ? (
                 <span className="text-retomy-accent">Free</span>
               ) : (
@@ -434,7 +438,7 @@ export default function DatasetDetailPage() {
 
           {/* Seller Card */}
           <div className="card p-4">
-            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-retomy-bg-hover flex items-center justify-center flex-shrink-0">
                 {dataset.SellerAvatarUrl ? (
                   <img src={dataset.SellerAvatarUrl} alt="" className="w-full h-full rounded-full object-cover" />
@@ -444,11 +448,11 @@ export default function DatasetDetailPage() {
               </div>
               <div>
                 <div className="flex items-center gap-1">
-                  <span className="font-semibold text-sm text-retomy-text-bright">{dataset.SellerName}</span>
+                  <span className="font-semibold text-sm text-retomy-text-bright">{formatOwner(dataset.SellerName)}</span>
                   {dataset.IsSellerVerified && <span className="text-retomy-accent text-xs">✓</span>}
                 </div>
                 <p className="text-xs text-retomy-text-secondary">
-                  {dataset.SellerDatasetCount} datasets · {dataset.SellerFollowers} followers
+                  {dataset.SellerDatasetCount} data · {dataset.SellerFollowers} followers
                 </p>
               </div>
             </div>

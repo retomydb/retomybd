@@ -55,17 +55,17 @@ export default function HomePage() {
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
           <div className="max-w-3xl">
-            <div className="badge-accent mb-4 text-sm">Enterprise Dataset Marketplace</div>
+            <div className="badge-accent mb-4 text-sm">Data Marketplace</div>
             <h1 className="text-4xl lg:text-6xl font-extrabold text-retomy-text-bright leading-tight">
               Retomy Db
             </h1>
             <p className="mt-6 text-lg text-retomy-text-secondary leading-relaxed max-w-xl">
-              Buy, sell, and discover enterprise-grade datasets. Trusted by data teams worldwide
+              Discover high-quality data. Trusted by data teams worldwide
               for AI/ML training, analytics, and research.
             </p>
             <div className="flex flex-wrap gap-4 mt-8">
               <Link to="/browse" className="btn-primary text-base !px-8 !py-3 flex items-center gap-2">
-                Explore Datasets <FiArrowRight />
+                Explore Data <FiArrowRight />
               </Link>
               {!isAuthenticated && (
                 <Link to="/signup?role=seller" className="btn-secondary text-base !px-8 !py-3">
@@ -75,23 +75,49 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Stats Bar */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16 pt-8 border-t border-retomy-border/20">
-            <div>
-              <div className="stat-value">{stats.TotalDatasets || '0'}</div>
-              <div className="stat-label">Datasets Available</div>
+          {/* Stats Cards - modern responsive layout */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mt-16 pt-8">
+            <div className="card p-4 flex items-center gap-4 hover:shadow-lg transition-shadow">
+              <div className="w-14 h-14 rounded-md bg-retomy-accent/10 flex items-center justify-center">
+                <FiDatabase className="text-retomy-accent" size={22} />
+              </div>
+              <div>
+                <div className="flex items-baseline gap-4">
+                  <div className="text-2xl lg:text-3xl font-extrabold text-retomy-text-bright">{stats.TotalDatasets ?? '0'}</div>
+                  <div className="text-sm text-retomy-text-secondary">Total datasets</div>
+                </div>
+                <div className="text-sm mt-1 text-retomy-text-secondary">Free: <span className="font-semibold text-retomy-text-bright">{stats.FreeDatasets ?? '0'}</span></div>
+              </div>
             </div>
-            <div>
-              <div className="stat-value">{stats.TotalSellers || '0'}</div>
-              <div className="stat-label">Data Providers</div>
+
+            <div className="card p-4 flex items-center gap-4 hover:shadow-lg transition-shadow">
+              <div className="w-14 h-14 rounded-md bg-retomy-green-light/10 flex items-center justify-center">
+                <FiUsers className="text-retomy-green-light" size={22} />
+              </div>
+              <div>
+                <div className="text-2xl lg:text-3xl font-extrabold text-retomy-text-bright">{stats.TotalSellers || '0'}</div>
+                <div className="text-xs uppercase text-retomy-text-secondary tracking-wide mt-1">Data Providers</div>
+              </div>
             </div>
-            <div>
-              <div className="stat-value">{stats.TotalUsers || '0'}</div>
-              <div className="stat-label">Active Users</div>
+
+            <div className="card p-4 flex items-center gap-4 hover:shadow-lg transition-shadow">
+              <div className="w-14 h-14 rounded-md bg-retomy-accent/10 flex items-center justify-center">
+                <FiUsers className="text-retomy-accent" size={22} />
+              </div>
+              <div>
+                <div className="text-2xl lg:text-3xl font-extrabold text-retomy-text-bright">{stats.TotalUsers || '0'}</div>
+                <div className="text-xs uppercase text-retomy-text-secondary tracking-wide mt-1">Active Users</div>
+              </div>
             </div>
-            <div>
-              <div className="stat-value">{(stats.TotalDownloads || 0).toLocaleString()}</div>
-              <div className="stat-label">Total Downloads</div>
+
+            <div className="card p-4 flex items-center gap-4 hover:shadow-lg transition-shadow">
+              <div className="w-14 h-14 rounded-md bg-retomy-gold/10 flex items-center justify-center">
+                <FiDownload className="text-retomy-gold" size={22} />
+              </div>
+              <div>
+                <div className="text-2xl lg:text-3xl font-extrabold text-retomy-text-bright">{(stats.TotalDownloads || 0).toLocaleString()}</div>
+                <div className="text-xs uppercase text-retomy-text-secondary tracking-wide mt-1">Total Downloads</div>
+              </div>
             </div>
           </div>
         </div>
@@ -105,7 +131,7 @@ export default function HomePage() {
               <div className="w-12 h-12 mx-auto rounded-lg bg-retomy-accent/10 flex items-center justify-center mb-4">
                 <FiShield className="text-retomy-accent" size={24} />
               </div>
-              <h3 className="font-bold text-retomy-text-bright mb-2">Enterprise Security</h3>
+              <h3 className="font-bold text-retomy-text-bright mb-2">Platform Security</h3>
               <p className="text-sm text-retomy-text-secondary">
                 End-to-end encryption, privacy scoring, and compliance-ready data governance.
               </p>
@@ -115,8 +141,8 @@ export default function HomePage() {
                 <FiCode className="text-retomy-accent" size={24} />
               </div>
               <h3 className="font-bold text-retomy-text-bright mb-2">API-First Access</h3>
-              <p className="text-sm text-retomy-text-secondary">
-                RESTful APIs with presigned URLs, API keys, and programmatic access to all datasets.
+                <p className="text-sm text-retomy-text-secondary">
+                RESTful APIs with presigned URLs, API keys, and programmatic access to all data.
               </p>
             </div>
             <div className="card p-6 text-center">
@@ -138,16 +164,25 @@ export default function HomePage() {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <FiStar className="text-retomy-gold" size={20} />
-              <h2 className="section-title">Featured Datasets</h2>
+              <h2 className="section-title">Featured Data</h2>
             </div>
             <Link to="/browse?sort_by=featured" className="text-sm text-retomy-accent hover:underline flex items-center gap-1">
               View All <FiArrowRight size={14} />
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {data.featured.slice(0, 4).map((d: any) => (
-              <DatasetCard key={d.DatasetId} dataset={d} onAddToCart={handleAddToCart} />
-            ))}
+          <div className="bg-retomy-bg-card rounded-lg p-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 browse-grid">
+              {data.featured.slice(0, 4).map((d: any) => (
+                <div key={d.DatasetId} className="min-w-0">
+                  <DatasetCard dataset={d} onAddToCart={handleAddToCart} />
+                </div>
+              ))}
+            </div>
+            <div className="mt-3">
+              <Link to="/browse?sort_by=featured" className="text-sm text-retomy-accent hover:underline">
+                Browse all data &rarr;
+              </Link>
+            </div>
           </div>
         </section>
       )}
@@ -164,10 +199,19 @@ export default function HomePage() {
               View All <FiArrowRight size={14} />
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {data.trending.slice(0, 8).map((d: any) => (
-              <DatasetCard key={d.DatasetId} dataset={d} onAddToCart={handleAddToCart} />
-            ))}
+          <div className="bg-retomy-bg-card rounded-lg p-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 browse-grid">
+              {data.trending.slice(0, 8).map((d: any) => (
+                <div key={d.DatasetId} className="min-w-0">
+                  <DatasetCard dataset={d} onAddToCart={handleAddToCart} />
+                </div>
+              ))}
+            </div>
+            <div className="mt-3">
+              <Link to="/browse?sort_by=downloads" className="text-sm text-retomy-accent hover:underline">
+                Browse all data &rarr;
+              </Link>
+            </div>
           </div>
         </section>
       )}
@@ -184,10 +228,19 @@ export default function HomePage() {
               View All <FiArrowRight size={14} />
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {data.new_arrivals.slice(0, 4).map((d: any) => (
-              <DatasetCard key={d.DatasetId} dataset={d} onAddToCart={handleAddToCart} />
-            ))}
+          <div className="bg-retomy-bg-card rounded-lg p-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 browse-grid">
+              {data.new_arrivals.slice(0, 4).map((d: any) => (
+                <div key={d.DatasetId} className="min-w-0">
+                  <DatasetCard dataset={d} onAddToCart={handleAddToCart} />
+                </div>
+              ))}
+            </div>
+            <div className="mt-3">
+              <Link to="/browse?sort_by=newest" className="text-sm text-retomy-accent hover:underline">
+                Browse all data &rarr;
+              </Link>
+            </div>
           </div>
         </section>
       )}
@@ -210,7 +263,7 @@ export default function HomePage() {
                         {cat.Name}
                       </h3>
                       <p className="text-xs text-retomy-text-secondary mt-1">
-                        {cat.DatasetCount || 0} datasets
+                        {cat.DatasetCount || 0} data
                       </p>
                     </div>
                     <FiDatabase className="text-retomy-accent/40 group-hover:text-retomy-accent transition-colors" size={20} />
@@ -231,7 +284,7 @@ export default function HomePage() {
               Marketplace is Ready
             </h2>
             <p className="text-retomy-text-secondary mb-8">
-              The retomY marketplace is set up and waiting for datasets. Sign up as a seller to list your first dataset, or explore the platform.
+              The retomY marketplace is set up and waiting for data. Sign up as a seller to list your first data, or explore the platform.
             </p>
             <div className="flex justify-center gap-4">
               <Link to="/signup?role=seller" className="btn-primary">Become a Seller</Link>
@@ -248,7 +301,7 @@ export default function HomePage() {
             Ready to monetize your data?
           </h2>
           <p className="text-retomy-text-secondary max-w-lg mx-auto mb-8">
-            Join thousands of data providers selling to enterprise clients. 
+            Join thousands of data providers selling to clients worldwide. 
             Set your price, we handle the rest. Only 15% platform fee.
           </p>
           <Link to="/signup?role=seller" className="btn-primary text-lg !px-10 !py-3">

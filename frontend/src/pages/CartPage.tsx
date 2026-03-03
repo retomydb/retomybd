@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { purchasesApi, paymentsApi, getApiError } from '../services/api';
+import { formatOwner } from '../utils/name';
 import { useAuthStore, useCartStore } from '../store/authStore';
 import { FiTrash2, FiShoppingCart, FiPackage, FiArrowRight, FiCreditCard } from 'react-icons/fi';
 import toast from 'react-hot-toast';
@@ -47,7 +48,7 @@ export default function CartPage() {
 
       if (data.free) {
         // All items were free — already granted
-        toast.success(data.message || 'All free datasets granted!');
+        toast.success(data.message || 'All free data granted!');
         await loadCart();
         navigate('/dashboard');
         return;
@@ -81,9 +82,9 @@ export default function CartPage() {
         <div className="card p-12 text-center">
           <FiShoppingCart className="mx-auto text-retomy-text-secondary mb-3" size={48} />
           <h2 className="text-lg font-semibold text-retomy-text-bright mb-2">Your cart is empty</h2>
-          <p className="text-sm text-retomy-text-secondary mb-4">Browse our marketplace to find datasets you need.</p>
+          <p className="text-sm text-retomy-text-secondary mb-4">Browse our marketplace to find data you need.</p>
           <Link to="/browse" className="btn-primary inline-flex items-center gap-2">
-            Browse Datasets <FiArrowRight size={14} />
+            Browse Data <FiArrowRight size={14} />
           </Link>
         </div>
       ) : (
@@ -103,7 +104,7 @@ export default function CartPage() {
                   <Link to={`/dataset/${item.DatasetId}`} className="font-medium text-sm text-retomy-text-bright hover:text-retomy-accent truncate block">
                     {item.Title}
                   </Link>
-                  <p className="text-xs text-retomy-text-secondary mt-0.5">{item.SellerName} · {item.FileFormat?.toUpperCase()}</p>
+                  <p className="text-xs text-retomy-text-secondary mt-0.5">{formatOwner(item.SellerName)} · {item.FileFormat?.toUpperCase()}</p>
                 </div>
                 <div className="text-right flex items-center gap-4">
                   <p className="font-bold text-retomy-text-bright">

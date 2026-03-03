@@ -5,10 +5,29 @@ Buyer/Seller/Admin dashboards
 from fastapi import APIRouter, HTTPException, Depends, Query
 from core.security import get_current_user, require_role
 from core.database import execute_sp, execute_query
+from core.storage import generate_presigned_url
+from urllib.parse import urlparse
 import structlog
 
 logger = structlog.get_logger()
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
+
+
+def _refresh_thumbnail_url(url: str | None) -> str | None:
+    """Regenerate SAS token for a stored thumbnail URL."""
+    if not url or not url.startswith("http"):
+        return url
+    try:
+        parsed = urlparse(url)
+        parts = parsed.path.lstrip("/").split("/", 1)
+        if len(parts) == 2:
+            remainder = parts[1]
+            container_and_blob = remainder.split("/", 1)
+            if len(container_and_blob) == 2:
+                return generate_presigned_url(container_and_blob[0], container_and_blob[1], expiry_hours=24)
+    except Exception:
+        pass
+    return url
 
 
 def serialize_results(results):
@@ -40,9 +59,32 @@ async def buyer_dashboard(user: dict = Depends(get_current_user)):
             "UserId": str(user["UserId"]),
         }, fetch="multi")
 
+        user_summary = serialize_results(results[0][0]) if results and results[0] else {}
+        recent_purchases = serialize_results(results[1]) if len(results) > 1 else []
+
+        # Build stats from user_summary + purchase data
+        stats = {
+            "TotalPurchases": len(recent_purchases),
+            "TotalSpent": sum(float(p.get("Amount", 0) or 0) for p in recent_purchases),
+            "Credits": user_summary.get("CreditsBalance", 0),
+            "TotalReviews": 0,
+        }
+        # Count total purchases from a dedicated query if available
+        if len(results) > 4 and results[4]:
+            extra = results[4][0] if results[4] else {}
+            stats["TotalPurchases"] = extra.get("TotalPurchases", stats["TotalPurchases"])
+            stats["TotalSpent"] = float(extra.get("TotalSpent", stats["TotalSpent"]) or 0)
+            stats["TotalReviews"] = extra.get("TotalReviews", 0)
+
+        # Refresh thumbnail SAS tokens
+        for p in recent_purchases:
+            if p.get("ThumbnailUrl"):
+                p["ThumbnailUrl"] = _refresh_thumbnail_url(p["ThumbnailUrl"])
+
         return {
-            "user_summary": serialize_results(results[0][0]) if results and results[0] else {},
-            "recent_purchases": serialize_results(results[1]) if len(results) > 1 else [],
+            "user_summary": user_summary,
+            "stats": stats,
+            "recent_purchases": recent_purchases,
             "notifications": serialize_results(results[2]) if len(results) > 2 else [],
             "wishlist_count": results[3][0].get("WishlistCount", 0) if len(results) > 3 and results[3] else 0,
         }

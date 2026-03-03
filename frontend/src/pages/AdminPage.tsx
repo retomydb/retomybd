@@ -4,6 +4,8 @@ import {
   FiUsers, FiPackage, FiDollarSign, FiTrendingUp, FiShield,
   FiCheck, FiX, FiEye, FiAlertCircle, FiActivity
 } from 'react-icons/fi';
+import { formatOwner } from '../utils/name';
+import { truncateWords } from '../utils/text';
 import toast from 'react-hot-toast';
 
 export default function AdminPage() {
@@ -24,6 +26,7 @@ export default function AdminPage() {
         dashboardApi.getAdminUsers(),
         dashboardApi.getPendingDatasets(),
       ]);
+  
       setStats(statsRes.data);
       setUsers(usersRes.data.users || []);
       setPendingDatasets(pendingRes.data.datasets || []);
@@ -77,8 +80,8 @@ export default function AdminPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
         {[
-          { label: 'Total Users', value: s.TotalUsers || 0, icon: FiUsers, color: 'text-retomy-accent' },
-          { label: 'Total Datasets', value: s.TotalDatasets || 0, icon: FiPackage, color: 'text-retomy-green-light' },
+            { label: 'Total Users', value: s.TotalUsers || 0, icon: FiUsers, color: 'text-retomy-accent' },
+              { label: 'Total Data', value: s.TotalDatasets || 0, icon: FiPackage, color: 'text-retomy-green-light' },
           { label: 'Total Revenue', value: `$${Number(s.TotalRevenue || 0).toFixed(0)}`, icon: FiDollarSign, color: 'text-retomy-gold' },
           { label: 'Commission', value: `$${Number(s.TotalCommission || 0).toFixed(0)}`, icon: FiTrendingUp, color: 'text-retomy-purple' },
           { label: 'Pending', value: pendingDatasets.length, icon: FiAlertCircle, color: 'text-orange-400' },
@@ -124,8 +127,8 @@ export default function AdminPage() {
                 <span className="text-retomy-text-secondary">Active Buyers</span>
                 <span className="text-retomy-text-bright">{s.TotalBuyers || 0}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-retomy-text-secondary">Published Datasets</span>
+                <div className="flex justify-between text-sm">
+                <span className="text-retomy-text-secondary">Published Data</span>
                 <span className="text-retomy-text-bright">{s.PublishedDatasets || 0}</span>
               </div>
               <div className="flex justify-between text-sm">
@@ -141,7 +144,7 @@ export default function AdminPage() {
           <div className="card p-6">
             <h3 className="font-semibold text-retomy-text-bright flex items-center gap-2 mb-4"><FiAlertCircle size={14} /> Pending Moderation</h3>
             {pendingDatasets.length === 0 ? (
-              <p className="text-sm text-retomy-text-secondary">No items pending review.</p>
+              <p className="text-sm text-retomy-text-secondary">No data pending review.</p>
             ) : (
               <div className="space-y-2">
                 {pendingDatasets.slice(0, 5).map((d: any) => (
@@ -162,12 +165,12 @@ export default function AdminPage() {
       {activeTab === 'moderation' && (
         <div className="card">
           <div className="px-6 py-4 border-b border-retomy-border/30">
-            <h2 className="font-semibold text-retomy-text-bright">Pending Datasets</h2>
+            <h2 className="font-semibold text-retomy-text-bright">Pending Data</h2>
           </div>
           {pendingDatasets.length === 0 ? (
             <div className="p-12 text-center">
               <FiCheck className="mx-auto text-retomy-green-light mb-3" size={36} />
-              <p className="text-retomy-text-secondary">All clear! No datasets pending review.</p>
+              <p className="text-retomy-text-secondary">All clear! No data pending review.</p>
             </div>
           ) : (
             <div className="divide-y divide-retomy-border/20">
@@ -175,9 +178,9 @@ export default function AdminPage() {
                 <div key={d.DatasetId} className="p-4 flex items-center gap-4">
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm text-retomy-text-bright">{d.Title}</p>
-                    <p className="text-xs text-retomy-text-secondary mt-0.5 truncate">{d.ShortDescription}</p>
-                    <div className="flex items-center gap-3 text-xs text-retomy-text-secondary mt-1">
-                      <span>by {d.SellerName}</span>
+                    <p className="text-xs text-retomy-text-secondary mt-0.5 truncate">{truncateWords(d.ShortDescription || d.short_description, 20)}</p>
+                      <div className="flex items-center gap-3 text-xs text-retomy-text-secondary mt-1">
+                      <span>by {formatOwner(d.SellerName)}</span>
                       <span>${Number(d.Price || 0).toFixed(2)}</span>
                       <span>{new Date(d.CreatedAt).toLocaleDateString()}</span>
                     </div>

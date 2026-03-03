@@ -5,6 +5,8 @@ import { datasetsApi, purchasesApi, getApiError } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 import { FiFilter, FiGrid, FiList, FiSearch, FiX } from 'react-icons/fi';
+import { formatOwner } from '../utils/name';
+import { truncateWords } from '../utils/text';
 
 export default function BrowsePage() {
   const { isAuthenticated } = useAuthStore();
@@ -36,7 +38,16 @@ export default function BrowsePage() {
       if (query) params.query = query;
       if (categoryId) params.category_id = parseInt(categoryId);
       if (sortBy) params.sort_by = sortBy;
-      if (pricingModel) params.pricing_model = pricingModel;
+      if (pricingModel) {
+        // If user selected 'free' in the UI, prefer using price=0 filters instead of sending
+        // `pricing_model=free` which would exclude items where PricingModel is NULL but Price==0.
+        if (pricingModel === 'free') {
+          params.min_price = 0;
+          params.max_price = 0;
+        } else {
+          params.pricing_model = pricingModel;
+        }
+      }
       if (fileFormat) params.file_format = fileFormat;
 
       const { data } = await datasetsApi.search(params);
@@ -87,10 +98,10 @@ export default function BrowsePage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-retomy-text-bright">
-            {query ? `Results for "${query}"` : 'Browse Datasets'}
+            {query ? `Results for "${query}"` : 'Browse Data'}
           </h1>
           <p className="text-sm text-retomy-text-secondary mt-1">
-            {totalCount} dataset{totalCount !== 1 ? 's' : ''} available
+            {totalCount} data available
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -214,46 +225,68 @@ export default function BrowsePage() {
           ) : datasets.length === 0 ? (
             <div className="text-center py-20">
               <FiSearch className="mx-auto text-retomy-text-secondary mb-4" size={48} />
-              <h3 className="text-xl font-semibold text-retomy-text-bright mb-2">No datasets found</h3>
+              <h3 className="text-xl font-semibold text-retomy-text-bright mb-2">No data found</h3>
               <p className="text-retomy-text-secondary mb-6">
-                {query ? `No results for "${query}". Try different keywords.` : 'No datasets match your filters.'}
+                {query ? `No results for "${query}". Try different keywords.` : 'No data match your filters.'}
               </p>
               <button onClick={clearFilters} className="btn-secondary">Clear Filters</button>
             </div>
           ) : (
             <>
-              <div className={
-                viewMode === 'grid'
-                  ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'
-                  : 'space-y-3'
-              }>
-                {datasets.map((dataset: any) => (
-                  viewMode === 'grid' ? (
-                    <DatasetCard key={dataset.DatasetId} dataset={dataset} onAddToCart={handleAddToCart} />
-                  ) : (
-                    <Link key={dataset.DatasetId} to={`/dataset/${dataset.DatasetId}`}
-                      className="card p-4 flex gap-4 hover:border-retomy-accent/40 transition-all">
-                      <div className="w-24 h-20 bg-retomy-bg-hover rounded flex-shrink-0 flex items-center justify-center">
-                        <span className="text-xs text-retomy-text-secondary uppercase">
-                          {dataset.FileFormat || 'DATA'}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-retomy-text-bright truncate">{dataset.Title}</h3>
-                        <p className="text-sm text-retomy-text-secondary line-clamp-1 mt-1">{dataset.ShortDescription}</p>
-                        <div className="flex items-center gap-4 mt-2 text-xs text-retomy-text-secondary">
-                          <span>{dataset.SellerName}</span>
-                          <span>{dataset.TotalDownloads || 0} downloads</span>
+              <div>
+                {viewMode === 'grid' ? (
+                  // Row-based grid: parent container has bg, children are transparent
+                  <div className="bg-retomy-bg-card rounded-lg p-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 browse-grid">
+                      {datasets.map((dataset: any) => (
+                        <div key={dataset.DatasetId} className="min-w-0">
+                          <DatasetCard dataset={dataset} onAddToCart={handleAddToCart} />
                         </div>
+                      ))}
+                    </div>
+
+                    {/* Browse all data link at bottom-left */}
+                    <div className="mt-3">
+                      <Link to="/browse?page_size=1000" className="text-sm text-retomy-accent hover:underline">
+                        Browse all data &rarr;
+                      </Link>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {datasets.map((dataset: any, idx: number) => (
+                      <div key={dataset.DatasetId} className="">
+                        <Link to={`/dataset/${dataset.DatasetId}`} className="card p-4 flex gap-4 items-center hover:border-retomy-accent/40 transition-all">
+                          <div className="w-24 h-20 bg-retomy-bg-hover rounded flex-shrink-0 flex items-center justify-center">
+                            <span className="text-xs text-retomy-text-secondary uppercase">
+                              {dataset.FileFormat || 'DATA'}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-retomy-text-bright truncate">{dataset.Title}</h3>
+                            <p className="text-sm text-retomy-text-secondary line-clamp-1 mt-1">{truncateWords(dataset.ShortDescription || dataset.short_description, 18)}</p>
+                            <div className="flex items-center gap-4 mt-2 text-xs text-retomy-text-secondary">
+                              <span>{formatOwner(dataset.SellerName || dataset.seller_name)}</span>
+                              <span>{dataset.TotalDownloads || 0} downloads</span>
+                            </div>
+                          </div>
+                          <div className="flex-shrink-0 text-right">
+                            <div className="text-sm font-semibold price-tag">
+                              {dataset.Price === 0 ? 'Free' : `$${dataset.Price?.toFixed(2)}`}
+                            </div>
+                          </div>
+                        </Link>
+
+                        {/* Divider between list items (not full height) */}
+                        {idx < datasets.length - 1 && (
+                          <div className="my-2 flex justify-center">
+                            <div className="h-px w-11/12 max-w-[900px] bg-gradient-to-r from-transparent via-retomy-border/40 to-transparent" />
+                          </div>
+                        )}
                       </div>
-                      <div className="flex-shrink-0 text-right">
-                        <div className="text-lg font-bold price-tag">
-                          {dataset.Price === 0 ? 'Free' : `$${dataset.Price?.toFixed(2)}`}
-                        </div>
-                      </div>
-                    </Link>
-                  )
-                ))}
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Pagination */}

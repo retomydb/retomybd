@@ -63,11 +63,19 @@
 
   .card {
     @apply bg-retomy-bg-card rounded shadow-card hover:shadow-card-hover 
-           transition-all duration-300 border border-retomy-border/30;
+           transition-all duration-300;
   }
 
   .card-hover {
-    @apply card hover:border-retomy-accent/40 hover:translate-y-[-2px];
+    @apply card hover:translate-y-[-2px];
+  }
+
+  /* Inside browse grid, cards have no bg/shadow — parent container provides them */
+  .browse-grid .card-hover {
+    @apply bg-transparent shadow-none rounded-none;
+  }
+  .browse-grid .card-hover:hover {
+    @apply shadow-none translate-y-0;
   }
 
   .input-field {
@@ -128,5 +136,62 @@
 
   .stat-label {
     @apply text-xs uppercase tracking-wider text-retomy-text-secondary mt-1;
+  }
+}
+
+/* Vertical dividers between items in the browse grid. Uses nth-child rules
+   to only draw a right-side divider for items that are not the last column
+   in a row. Matches Tailwind breakpoints used for the grid: 2 / 3 / 4 / 5 cols. */
+.browse-grid > * {
+  position: relative;
+}
+
+/* mobile / default: grid-cols-2 */
+.browse-grid > *:not(:nth-child(2n))::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  right: 0;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, rgba(135,152,166,0.35), transparent);
+}
+
+/* sm: grid-cols-3 */
+@media (min-width: 640px) {
+  .browse-grid > *:not(:nth-child(3n))::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    bottom: 10px;
+    right: 0;
+    width: 1px;
+    background: linear-gradient(to bottom, transparent, rgba(135,152,166,0.35), transparent);
+  }
+}
+
+/* md: grid-cols-4 */
+@media (min-width: 768px) {
+  .browse-grid > *:not(:nth-child(4n))::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    bottom: 10px;
+    right: 0;
+    width: 1px;
+    background: linear-gradient(to bottom, transparent, rgba(135,152,166,0.35), transparent);
+  }
+}
+
+/* lg: grid-cols-5 */
+@media (min-width: 1024px) {
+  .browse-grid > *:not(:nth-child(5n))::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    bottom: 10px;
+    right: 0;
+    width: 1px;
+    background: linear-gradient(to bottom, transparent, rgba(135,152,166,0.35), transparent);
   }
 }

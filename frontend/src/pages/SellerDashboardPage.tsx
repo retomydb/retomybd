@@ -133,10 +133,10 @@ export default function SellerDashboardPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-retomy-text-bright">Seller Dashboard</h1>
-          <p className="text-sm text-retomy-text-secondary mt-1">Manage your datasets and track performance</p>
+          <p className="text-sm text-retomy-text-secondary mt-1">Manage your data and track performance</p>
         </div>
         <button onClick={() => setShowCreate(true)} className="btn-primary flex items-center gap-2">
-          <FiPlus size={14} /> New Dataset
+          <FiPlus size={14} /> New Data
         </button>
       </div>
 
@@ -150,8 +150,8 @@ export default function SellerDashboardPage() {
                 <p className="font-semibold text-retomy-text-bright text-sm">
                   {stripeStatus.connected ? 'Complete your Stripe setup' : 'Connect Stripe to receive payouts'}
                 </p>
-                <p className="text-xs text-retomy-text-secondary">
-                  Set up Stripe Connect to receive earnings from dataset sales directly to your bank account.
+                  <p className="text-xs text-retomy-text-secondary">
+                  Set up Stripe Connect to receive earnings from data sales directly to your bank account.
                 </p>
               </div>
             </div>
@@ -186,7 +186,7 @@ export default function SellerDashboardPage() {
         {[
           { label: 'Total Revenue', value: `$${Number(stats.TotalRevenue || 0).toFixed(2)}`, icon: FiDollarSign, color: 'text-retomy-green-light' },
           { label: 'Total Sales', value: stats.TotalSales || 0, icon: FiBarChart2, color: 'text-retomy-accent' },
-          { label: 'Datasets', value: stats.TotalDatasets || 0, icon: FiPackage, color: 'text-retomy-purple' },
+          { label: 'Data', value: stats.TotalDatasets || 0, icon: FiPackage, color: 'text-retomy-purple' },
           { label: 'Followers', value: stats.TotalFollowers || 0, icon: FiUsers, color: 'text-retomy-gold' },
         ].map(s => (
           <div key={s.label} className="card p-4">
@@ -206,22 +206,22 @@ export default function SellerDashboardPage() {
       {/* Datasets Table */}
       <div className="card">
         <div className="px-6 py-4 border-b border-retomy-border/30">
-          <h2 className="font-semibold text-retomy-text-bright">My Datasets</h2>
+          <h2 className="font-semibold text-retomy-text-bright">My Data</h2>
         </div>
-        {datasets.length === 0 ? (
+          {datasets.length === 0 ? (
           <div className="p-12 text-center">
             <FiPackage className="mx-auto text-retomy-text-secondary mb-3" size={36} />
-            <p className="text-retomy-text-secondary">You haven't published any datasets yet.</p>
+            <p className="text-retomy-text-secondary">You haven't published any data yet.</p>
             <button onClick={() => setShowCreate(true)} className="text-retomy-accent hover:underline text-sm mt-2 inline-flex items-center gap-1">
-              <FiPlus size={12} /> Create your first dataset
+              <FiPlus size={12} /> Create your first data
             </button>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-xs text-retomy-text-secondary uppercase border-b border-retomy-border/20">
-                  <th className="text-left px-6 py-3">Dataset</th>
+                  <tr className="text-xs text-retomy-text-secondary uppercase border-b border-retomy-border/20">
+                    <th className="text-left px-6 py-3">Data</th>
                   <th className="text-center px-4 py-3">Status</th>
                   <th className="text-right px-4 py-3">Price</th>
                   <th className="text-right px-4 py-3">Sales</th>
@@ -274,13 +274,13 @@ export default function SellerDashboardPage() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="card max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-retomy-border/30 flex items-center justify-between">
-              <h2 className="font-semibold text-retomy-text-bright">Create New Dataset</h2>
+              <h2 className="font-semibold text-retomy-text-bright">Create New Data</h2>
               <button onClick={() => setShowCreate(false)} className="text-retomy-text-secondary hover:text-retomy-text-bright">&times;</button>
             </div>
             <form onSubmit={handleCreate} className="p-6 space-y-4">
               <div>
                 <label className="block text-xs text-retomy-text-secondary mb-1">Title *</label>
-                <input type="text" value={createForm.title} onChange={e => setCreateForm({ ...createForm, title: e.target.value })} required className="input-field text-sm" placeholder="My Awesome Dataset" />
+                <input type="text" value={createForm.title} onChange={e => setCreateForm({ ...createForm, title: e.target.value })} required className="input-field text-sm" placeholder="My Awesome Data" />
               </div>
               <div>
                 <label className="block text-xs text-retomy-text-secondary mb-1">Short Description *</label>
@@ -333,7 +333,7 @@ export default function SellerDashboardPage() {
                 </select>
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="submit" className="btn-primary flex-1">Create Dataset</button>
+                <button type="submit" className="btn-primary flex-1">Create Data</button>
                 <button type="button" onClick={() => setShowCreate(false)} className="btn-secondary flex-1">Cancel</button>
               </div>
             </form>

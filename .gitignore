@@ -57,3 +57,4 @@ test_upload.py
 tools/
 *.tmp
 *.bak
+scripts/make_admin.py

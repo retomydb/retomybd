@@ -70,7 +70,7 @@ export default function SignupPage() {
           </Link>
           <h1 className="text-2xl font-bold text-retomy-text-bright">Create your retomY account</h1>
           <p className="text-sm text-retomy-text-secondary mt-2">
-            Join the enterprise dataset marketplace
+            Join the dataset marketplace
           </p>
         </div>
 

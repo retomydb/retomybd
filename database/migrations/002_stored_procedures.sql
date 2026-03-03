@@ -536,6 +536,12 @@ BEGIN
 
     -- Wishlist count
     SELECT COUNT(*) AS WishlistCount FROM retomy.Wishlists WHERE UserId = @UserId;
+
+    -- Buyer stats
+    SELECT
+        (SELECT COUNT(*) FROM retomy.Purchases WHERE BuyerId = @UserId AND Status = 'completed') AS TotalPurchases,
+        (SELECT ISNULL(SUM(Amount), 0) FROM retomy.Purchases WHERE BuyerId = @UserId AND Status = 'completed') AS TotalSpent,
+        (SELECT COUNT(*) FROM retomy.Reviews WHERE UserId = @UserId) AS TotalReviews;
 END
 GO
 
@@ -772,7 +778,9 @@ BEGIN
         (SELECT COUNT(*) FROM retomy.Datasets WHERE Status = 'published' AND DeletedAt IS NULL) AS TotalDatasets,
         (SELECT COUNT(DISTINCT SellerId) FROM retomy.Datasets WHERE Status = 'published' AND DeletedAt IS NULL) AS TotalSellers,
         (SELECT COUNT(*) FROM retomy.Users WHERE DeletedAt IS NULL) AS TotalUsers,
-        (SELECT ISNULL(SUM(TotalDownloads), 0) FROM retomy.Datasets WHERE Status = 'published' AND DeletedAt IS NULL) AS TotalDownloads;
+        (SELECT ISNULL(SUM(TotalDownloads), 0) FROM retomy.Datasets WHERE Status = 'published' AND DeletedAt IS NULL) AS TotalDownloads,
+        -- Count of free datasets by explicit pricing model, zero price, or NULL price
+        (SELECT COUNT(*) FROM retomy.Datasets WHERE Status = 'published' AND DeletedAt IS NULL AND (Price = 0 OR Price IS NULL OR PricingModel = 'free')) AS FreeDatasets;
 END
 GO
 

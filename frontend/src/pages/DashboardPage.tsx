@@ -44,9 +44,9 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-retomy-text-bright">My Dashboard</h1>
-          <p className="text-sm text-retomy-text-secondary mt-1">Overview of your datasets, purchases, and activity</p>
+          <p className="text-sm text-retomy-text-secondary mt-1">Overview of your data, purchases, and activity</p>
         </div>
-        <Link to="/browse" className="btn-primary text-sm">Browse Datasets</Link>
+        <Link to="/browse" className="btn-primary text-sm">Browse Data</Link>
       </div>
 
       {/* Stats */}
@@ -81,7 +81,7 @@ export default function DashboardPage() {
           <div className="p-12 text-center">
             <FiPackage className="mx-auto text-retomy-text-secondary mb-3" size={36} />
             <p className="text-retomy-text-secondary">No purchases yet.</p>
-            <Link to="/browse" className="text-retomy-accent hover:underline text-sm mt-2 inline-block">Browse datasets</Link>
+            <Link to="/browse" className="text-retomy-accent hover:underline text-sm mt-2 inline-block">Browse data</Link>
           </div>
         ) : (
           <div className="divide-y divide-retomy-border/20">
@@ -96,15 +96,15 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <Link to={`/dataset/${p.DatasetId}`} className="font-medium text-sm text-retomy-text-bright hover:text-retomy-accent truncate block">
-                    {p.DatasetTitle}
+                    {p.Title || p.DatasetTitle}
                   </Link>
                   <div className="flex items-center gap-3 text-xs text-retomy-text-secondary mt-1">
-                    <span className="flex items-center gap-1"><FiClock size={10} /> {new Date(p.PurchasedAt).toLocaleDateString()}</span>
-                    <span>v{p.Version || '1.0.0'}</span>
+                    <span className="flex items-center gap-1"><FiClock size={10} /> {p.CompletedAt ? new Date(p.CompletedAt).toLocaleDateString() : ''}</span>
+                    <span className="uppercase text-[10px]">{p.FileFormat || ''}</span>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-retomy-text-bright">${Number(p.AmountPaid).toFixed(2)}</p>
+                  <p className="text-sm font-semibold text-retomy-text-bright">{Number(p.Amount || 0) === 0 ? 'Free' : `$${Number(p.Amount).toFixed(2)}`}</p>
                 </div>
                 <Link to={`/dataset/${p.DatasetId}`} className="btn-secondary !py-1 !px-3 text-xs flex items-center gap-1">
                   <FiDownload size={12} /> Access

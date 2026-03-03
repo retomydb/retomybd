@@ -53,7 +53,7 @@ export default function Navbar() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search datasets..."
+                placeholder="Search data..."
                 className="w-full bg-retomy-bg border border-retomy-border rounded-sm pl-10 pr-4 py-2 text-sm
                            text-retomy-text placeholder-retomy-text-secondary
                            focus:outline-none focus:border-retomy-accent focus:ring-1 focus:ring-retomy-accent/30"

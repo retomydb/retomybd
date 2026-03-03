@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { datasetsApi } from '../services/api';
 import { FiChevronLeft, FiChevronRight, FiFileText, FiImage } from 'react-icons/fi';
@@ -15,8 +15,10 @@ export default function PreviewPane({ datasetId, dataset, rows = 5, maxBytes = 6
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [imageIndex, setImageIndex] = useState(0);
+  const [videoFile, setVideoFile] = useState<any | null>(null);
   const [textPreview, setTextPreview] = useState<string | null>(null);
   const [tableRows, setTableRows] = useState<string[][] | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
     if (!datasetId) return;
@@ -25,30 +27,51 @@ export default function PreviewPane({ datasetId, dataset, rows = 5, maxBytes = 6
     Promise.all([datasetsApi.getFiles(datasetId), Promise.resolve()])
       .then(([filesRes]) => {
         const fl = filesRes.data.files || [];
+        console.debug('PreviewPane: files list', fl);
         setFiles(fl);
         // Prefer sample then preview
         const sample = fl.find((f: any) => f.FileCategory === 'sample');
         const preview = fl.find((f: any) => f.FileCategory === 'preview');
 
         const candidate = sample || preview || fl[0];
-        if (candidate) fetchAndParse(candidate);
+        if (candidate) {
+          // Prefer to render video directly without fetching text parsing
+          const mime = candidate.MimeType || '';
+          if (mime.startsWith('video/') || (candidate.FileName && candidate.FileName.match(/\.(mp4|webm|mov|mkv)$/i))) {
+            setVideoFile(candidate);
+            setTextPreview(null);
+            setTableRows(null);
+            return;
+          }
+          fetchAndParse(candidate);
+        }
       })
       .catch((e: any) => setError('Failed to load preview'))
       .finally(() => setLoading(false));
   }, [datasetId]);
 
   const isImage = (mime?: string) => !!mime && mime.startsWith('image/');
+  const isVideo = (mime?: string) => !!mime && mime.startsWith('video/');
 
   const fetchAndParse = async (file: any) => {
     if (!file?.BlobPath) return;
     try {
       const res = await fetch(file.BlobPath, { method: 'GET' });
+      if (!res.ok) throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
       const ct = file.MimeType || res.headers.get('content-type') || '';
 
       if (isImage(ct)) {
         setTextPreview(null);
         setTableRows(null);
         // images are rendered from BlobPath directly
+        return;
+      }
+
+      if (isVideo(ct)) {
+        // video handled separately by rendering the video element
+        setVideoFile(file);
+        setTextPreview(null);
+        setTableRows(null);
         return;
       }
 
@@ -107,7 +130,9 @@ export default function PreviewPane({ datasetId, dataset, rows = 5, maxBytes = 6
       setTextPreview(text.slice(0, toRead));
       setTableRows(null);
     } catch (e) {
-      setError('Failed to fetch preview');
+      const msg = (e as any)?.message || String(e);
+      console.error('PreviewPane.fetchAndParse error', e);
+      setError(`Failed to fetch preview: ${msg}`);
     }
   };
 
@@ -173,7 +198,29 @@ export default function PreviewPane({ datasetId, dataset, rows = 5, maxBytes = 6
 
       {!loading && !error && (
         <div>
-          {previewImages.length > 0 ? (
+          {videoFile ? (
+            <div className="space-y-2">
+              <div className="w-full h-40 bg-retomy-bg rounded overflow-hidden flex items-center justify-center">
+                <video
+                  ref={(el) => { videoRef.current = el; }}
+                  src={videoFile.BlobPath}
+                  className="w-full h-full object-cover"
+                  controls
+                  onTimeUpdate={(e) => {
+                    const v = videoRef.current;
+                    if (!v) return;
+                    if (v.currentTime >= 60) {
+                      v.pause();
+                    }
+                  }}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-retomy-text-secondary">Preview plays first 60 seconds</span>
+                <a href={videoFile.BlobPath} target="_blank" rel="noreferrer" className="text-xs text-retomy-accent">Open full video</a>
+              </div>
+            </div>
+          ) : previewImages.length > 0 ? (
             <div className="space-y-2">
               <div className="w-full h-40 bg-retomy-bg rounded overflow-hidden flex items-center justify-center">
                 <img src={previewImages[imageIndex].BlobPath} alt={previewImages[imageIndex].FileName} className="w-full h-full object-cover" />

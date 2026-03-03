@@ -7,6 +7,7 @@ import {
   FiEdit2, FiEye, FiDownload, FiStar, FiTrendingUp,
   FiCheck, FiClock, FiXCircle, FiUploadCloud, FiCreditCard
 } from 'react-icons/fi';
+import DatasetCard from '../components/DatasetCard';
 import toast from 'react-hot-toast';
 
 export default function SellerDashboardPage() {
@@ -117,7 +118,17 @@ export default function SellerDashboardPage() {
   }
 
   const stats = data?.stats || {};
-  const datasets = data?.datasets || [];
+  const datasets = data?.dataset_performance || [];
+
+  const handleAddToCart = async (id: string) => {
+    if (!isAuthenticated) { toast.error('Sign in to add to cart'); return; }
+    try {
+      await purchasesApi.addToCart(id);
+      toast.success('Added to cart');
+    } catch (e: any) {
+      toast.error(getApiError(e, 'Failed to add'));
+    }
+  };
 
   const statusIcon = (s: string) => {
     switch (s?.toLowerCase()) {
@@ -203,13 +214,14 @@ export default function SellerDashboardPage() {
         ))}
       </div>
 
-      {/* Datasets Table */}
-      <div className="card">
-        <div className="px-6 py-4 border-b border-retomy-border/30">
-          <h2 className="font-semibold text-retomy-text-bright">My Data</h2>
+      {/* Datasets Grid (same design as Browse) */}
+      <section className="page-container py-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="section-title">My Data</h2>
+          <div />
         </div>
-          {datasets.length === 0 ? (
-          <div className="p-12 text-center">
+        {datasets.length === 0 ? (
+          <div className="card p-12 text-center">
             <FiPackage className="mx-auto text-retomy-text-secondary mb-3" size={36} />
             <p className="text-retomy-text-secondary">You haven't published any data yet.</p>
             <button onClick={() => setShowCreate(true)} className="text-retomy-accent hover:underline text-sm mt-2 inline-flex items-center gap-1">
@@ -217,57 +229,40 @@ export default function SellerDashboardPage() {
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                  <tr className="text-xs text-retomy-text-secondary uppercase border-b border-retomy-border/20">
-                    <th className="text-left px-6 py-3">Data</th>
-                  <th className="text-center px-4 py-3">Status</th>
-                  <th className="text-right px-4 py-3">Price</th>
-                  <th className="text-right px-4 py-3">Sales</th>
-                  <th className="text-right px-4 py-3">Revenue</th>
-                  <th className="text-right px-4 py-3">Rating</th>
-                  <th className="text-right px-6 py-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-retomy-border/20">
-                {datasets.map((ds: any) => (
-                  <tr key={ds.DatasetId} className="hover:bg-retomy-bg-hover/50 transition-colors">
-                    <td className="px-6 py-3">
-                      <Link to={`/dataset/${ds.DatasetId}`} className="font-medium text-retomy-text-bright hover:text-retomy-accent">
-                        {ds.Title}
-                      </Link>
-                    </td>
-                    <td className="text-center px-4 py-3">
-                      <span className="inline-flex items-center gap-1 capitalize text-xs">
-                        {statusIcon(ds.Status)} {ds.Status}
-                      </span>
-                    </td>
-                    <td className="text-right px-4 py-3 text-retomy-text-bright">${Number(ds.Price || 0).toFixed(2)}</td>
-                    <td className="text-right px-4 py-3">
-                      <span className="flex items-center justify-end gap-1"><FiDownload size={10} /> {ds.Sales || 0}</span>
-                    </td>
-                    <td className="text-right px-4 py-3 text-retomy-green-light">${Number(ds.Revenue || 0).toFixed(2)}</td>
-                    <td className="text-right px-4 py-3">
-                      <span className="flex items-center justify-end gap-1">
-                        <FiStar size={10} className="text-retomy-gold" /> {ds.AverageRating ? Number(ds.AverageRating).toFixed(1) : '—'}
-                      </span>
-                    </td>
-                    <td className="text-right px-6 py-3 flex items-center justify-end gap-3">
-                      <Link to={`/dataset/${ds.DatasetId}/manage`} className="text-retomy-gold hover:underline text-xs flex items-center gap-1">
-                        <FiUploadCloud size={10} /> Manage
-                      </Link>
-                      <Link to={`/dataset/${ds.DatasetId}`} className="text-retomy-accent hover:underline text-xs flex items-center gap-1">
-                        <FiEye size={10} /> View
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="bg-retomy-bg-card rounded-lg p-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 browse-grid">
+              {datasets.map((d: any) => (
+                <div key={d.DatasetId || d.dataset_id} className="min-w-0">
+                  <DatasetCard dataset={d} onAddToCart={handleAddToCart} />
+                  <div className="flex items-center justify-between mt-2 text-xs">
+                    <div className="flex gap-2">
+                      <Link to={`/dataset/${d.DatasetId || d.dataset_id}/manage`} className="text-retomy-gold hover:underline">Manage</Link>
+                      <Link to={`/dataset/${d.DatasetId || d.dataset_id}`} className="text-retomy-accent hover:underline">View</Link>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        if (!confirm('Delete this dataset? This cannot be undone.')) return;
+                        try {
+                          await datasetsApi.delete(d.DatasetId || d.dataset_id);
+                          toast.success('Dataset deleted');
+                          // reload dashboard
+                          loadDashboard();
+                        } catch (e: any) {
+                          toast.error(getApiError(e, 'Failed to delete'));
+                        }
+                      }}
+                      className="text-red-500 hover:underline"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3" />
           </div>
         )}
-      </div>
+      </section>
 
       {/* Create Modal */}
       {showCreate && (

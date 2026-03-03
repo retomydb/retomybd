@@ -362,16 +362,39 @@ async def list_dataset_files(
         )
     else:
         # Non-owners only see non-primary files (samples, docs, previews)
+        # Include BlobPath so we can return a presigned URL for allowed preview/sample files.
         files = execute_query(
-            "SELECT FileId, FileName, FileSize, MimeType, FileCategory, SortOrder, UploadedAt "
+            "SELECT FileId, FileName, BlobPath, FileSize, MimeType, FileCategory, SortOrder, UploadedAt "
             "FROM retomy.DatasetFiles WHERE DatasetId = ? AND FileCategory != 'primary' ORDER BY FileCategory, SortOrder",
             [dataset_id]
         )
 
     for f in files:
-        for k, v in f.items():
+        # Serialize datetimes
+        for k, v in list(f.items()):
             if hasattr(v, "isoformat"):
                 f[k] = v.isoformat()
+
+        # If a BlobPath is present, convert it to a presigned URL so the frontend can fetch it.
+        bp = f.get("BlobPath")
+        if bp and isinstance(bp, str):
+            if bp.startswith("http"):
+                # already a full URL
+                f["BlobPath"] = bp
+            elif "/" in bp:
+                try:
+                    parts = bp.split("/", 1)
+                    container = parts[0]
+                    blob_name = parts[1]
+                    # Only expose presigned URLs for non-primary files (samples/previews) or to owners
+                    if is_owner or f.get("FileCategory") != 'primary':
+                        f["BlobPath"] = generate_presigned_url(container, blob_name, expiry_hours=1)
+                    else:
+                        # remove raw blob path for non-authorized consumers
+                        f.pop("BlobPath", None)
+                except Exception:
+                    # leave BlobPath as-is if presigned generation fails
+                    pass
 
     return {"files": files, "dataset_id": dataset_id}
 
@@ -480,6 +503,65 @@ async def publish_dataset(
     )
 
     return {"message": f"Dataset status set to '{new_status}'", "status": new_status}
+
+
+@router.delete("/{dataset_id}")
+async def delete_dataset(
+    dataset_id: str,
+    user: dict = Depends(get_current_user),
+):
+    """Soft-delete a dataset. Only the seller or admins may delete."""
+    try:
+        user_id = str(user["UserId"])
+        dataset = execute_query(
+            "SELECT SellerId FROM retomy.Datasets WHERE DatasetId = ? AND DeletedAt IS NULL",
+            [dataset_id], fetch="one"
+        )
+        if not dataset:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        if str(dataset["SellerId"]) != user_id and user["Role"] not in ("admin", "superadmin"):
+            raise HTTPException(status_code=403, detail="Not authorized")
+        # Perform a full hard delete: remove related rows and try to delete blobs
+        from core.storage import delete_blob
+
+        # 1) delete blobs for dataset files (best-effort)
+        try:
+            files = execute_query("SELECT FileId, BlobPath FROM retomy.DatasetFiles WHERE DatasetId = ?", [dataset_id])
+            for f in files:
+                bp = f.get("BlobPath")
+                if bp and isinstance(bp, str) and "/" in bp and not bp.startswith("http"):
+                    parts = bp.split("/", 1)
+                    try:
+                        await delete_blob(parts[0], parts[1])
+                    except Exception:
+                        logger.warning("blob_delete_failed", blob_path=bp)
+        except Exception:
+            # continue even if we cannot enumerate files
+            logger.exception("failed_enumerating_files_for_delete")
+
+        # 2) delete dependent DB records in order (to satisfy FK constraints)
+        try:
+            execute_query("DELETE FROM retomy.Entitlements WHERE DatasetId = ?", [dataset_id], fetch="none")
+            execute_query("DELETE FROM retomy.Purchases WHERE DatasetId = ?", [dataset_id], fetch="none")
+            execute_query("DELETE FROM retomy.Reviews WHERE DatasetId = ?", [dataset_id], fetch="none")
+            execute_query("DELETE FROM retomy.DatasetVersions WHERE DatasetId = ?", [dataset_id], fetch="none")
+            execute_query("DELETE FROM retomy.DatasetTags WHERE DatasetId = ?", [dataset_id], fetch="none")
+            execute_query("DELETE FROM retomy.Wishlists WHERE DatasetId = ?", [dataset_id], fetch="none")
+            execute_query("DELETE FROM retomy.CartItems WHERE DatasetId = ?", [dataset_id], fetch="none")
+            execute_query("DELETE FROM retomy.DatasetFiles WHERE DatasetId = ?", [dataset_id], fetch="none")
+            # Finally delete dataset
+            execute_query("DELETE FROM retomy.Datasets WHERE DatasetId = ?", [dataset_id], fetch="none")
+        except Exception as e:
+            logger.error("delete_dataset_db_failed", error=str(e))
+            raise HTTPException(status_code=500, detail="Failed to delete dataset records")
+
+        logger.info("dataset_hard_deleted", dataset_id=dataset_id, deleted_by=user_id)
+        return {"message": "Dataset and related records deleted"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("delete_dataset_failed", error=str(e))
+        raise HTTPException(status_code=500, detail="Failed to delete dataset")
 
 
 @router.post("/{dataset_id}/reviews")

@@ -110,6 +110,7 @@ export const datasetsApi = {
   },
 
   publish: (id: string) => api.post(`/datasets/${id}/publish`),
+  delete: (id: string) => api.delete(`/datasets/${id}`),
 
   submitReview: (id: string, data: { rating: number; title?: string; content?: string }) =>
     api.post(`/datasets/${id}/reviews`, data),

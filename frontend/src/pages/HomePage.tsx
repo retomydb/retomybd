@@ -84,7 +84,7 @@ export default function HomePage() {
               <div className="grid grid-cols-2 gap-4 w-full">
                 <div className="text-center">
                   <div className="text-2xl lg:text-3xl font-extrabold text-retomy-text-bright">{stats.TotalDatasets ?? '0'}</div>
-                  <div className="text-xs uppercase text-retomy-text-secondary tracking-wide mt-1">TOTAL DATASETS</div>
+                  <div className="text-xs uppercase text-retomy-text-secondary tracking-wide mt-1">DATA</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl lg:text-3xl font-extrabold text-retomy-text-bright">{stats.FreeDatasets ?? '0'}</div>

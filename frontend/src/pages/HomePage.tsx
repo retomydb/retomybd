@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DatasetCard from '../components/DatasetCard';
+import PipelineAnimation from '../components/PipelineAnimationV2';
 import { datasetsApi, purchasesApi, getApiError } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
@@ -69,11 +70,13 @@ export default function HomePage() {
               </Link>
               {!isAuthenticated && (
                 <Link to="/signup?role=seller" className="btn-secondary text-base !px-8 !py-3">
-                  Start Selling
+                  Get Started
                 </Link>
               )}
             </div>
           </div>
+          {/* Decorative animated pipeline on the right of the hero text */}
+          <PipelineAnimation />
 
           {/* Stats Cards - modern responsive layout */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mt-16 pt-8">
@@ -308,7 +311,7 @@ export default function HomePage() {
             Set your price, we handle the rest. Only 15% platform fee.
           </p>
           <Link to="/signup?role=seller" className="btn-primary text-lg !px-10 !py-3">
-            Start Selling Today
+            Get Started Today
           </Link>
         </div>
       </section>

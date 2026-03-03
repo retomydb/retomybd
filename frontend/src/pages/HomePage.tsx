@@ -81,12 +81,15 @@ export default function HomePage() {
               <div className="w-14 h-14 rounded-md bg-retomy-accent/10 flex items-center justify-center">
                 <FiDatabase className="text-retomy-accent" size={22} />
               </div>
-              <div>
-                <div className="flex items-baseline gap-4">
+              <div className="grid grid-cols-2 gap-4 w-full">
+                <div className="text-center">
                   <div className="text-2xl lg:text-3xl font-extrabold text-retomy-text-bright">{stats.TotalDatasets ?? '0'}</div>
-                  <div className="text-sm text-retomy-text-secondary">Total datasets</div>
+                  <div className="text-xs uppercase text-retomy-text-secondary tracking-wide mt-1">TOTAL DATASETS</div>
                 </div>
-                <div className="text-sm mt-1 text-retomy-text-secondary">Free: <span className="font-semibold text-retomy-text-bright">{stats.FreeDatasets ?? '0'}</span></div>
+                <div className="text-center">
+                  <div className="text-2xl lg:text-3xl font-extrabold text-retomy-text-bright">{stats.FreeDatasets ?? '0'}</div>
+                  <div className="text-xs uppercase text-retomy-text-secondary tracking-wide mt-1">FREE</div>
+                </div>
               </div>
             </div>
 

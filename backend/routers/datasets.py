@@ -2,7 +2,7 @@
 retomY — Datasets Router
 Handles CRUD, search, and management for datasets
 """
-from fastapi import APIRouter, HTTPException, status, Depends, Query, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, status, Depends, Query, UploadFile, File, Form, Body
 from models.schemas import (
     CreateDatasetRequest, UpdateDatasetRequest, DatasetListResponse,
     MessageResponse, ReviewRequest, PurchaseRequest
@@ -20,6 +20,108 @@ import re
 logger = structlog.get_logger()
 settings = get_settings()
 router = APIRouter(prefix="/datasets", tags=["Datasets"])
+
+
+@router.get("/{dataset_id}/files/{file_id}/presign")
+async def presign_dataset_file(
+    dataset_id: str,
+    file_id: str,
+    user: dict = Depends(get_current_user_optional),
+):
+    """Return a presigned URL for a specific file if the caller is authorized.
+
+    Rules:
+    - Sellers (owners) and admins can get any file presigned.
+    - Non-owners can get presigned URLs for non-primary files (sample, documentation, preview).
+    - For primary files, the caller must have an active entitlement (purchase).
+    """
+    # Lookup file
+    file_record = execute_query(
+        "SELECT FileId, FileName, BlobPath, FileCategory FROM retomy.DatasetFiles WHERE FileId = ? AND DatasetId = ?",
+        [file_id, dataset_id], fetch="one"
+    )
+    if not file_record:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # Lookup dataset owner
+    dataset = execute_query(
+        "SELECT SellerId FROM retomy.Datasets WHERE DatasetId = ? AND DeletedAt IS NULL",
+        [dataset_id], fetch="one"
+    )
+    if not dataset:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+
+    user_id = str(user["UserId"]) if user else None
+    is_owner = user and (str(user.get("UserId")) == str(dataset.get("SellerId")) or user.get("Role") in ("admin", "superadmin"))
+
+    # Allow owners/admins to presign any file
+    if not is_owner:
+        # Non-owners can access non-primary files freely (samples/docs/previews)
+        if file_record.get("FileCategory") != 'primary':
+            pass
+        else:
+            # Check entitlement (purchase) for primary files
+            if not user_id:
+                raise HTTPException(status_code=401, detail="Authentication required")
+            entitlement = execute_query(
+                """SELECT p.PurchaseId FROM retomy.Purchases p
+                   INNER JOIN retomy.Entitlements e ON e.PurchaseId = p.PurchaseId
+                   WHERE p.DatasetId = ? AND p.BuyerId = ? AND p.Status = 'completed' AND e.IsActive = 1""",
+                [dataset_id, user_id], fetch="one"
+            )
+            if not entitlement:
+                raise HTTPException(status_code=403, detail="You don't have access to this file")
+
+    # Generate presigned URL
+    bp = file_record.get("BlobPath")
+    if not bp:
+        raise HTTPException(status_code=404, detail="Blob path not available")
+
+    if isinstance(bp, str) and bp.startswith("http"):
+        url = bp
+    else:
+        try:
+            parts = bp.split("/", 1)
+            container = parts[0]
+            blob_name = parts[1]
+            url = generate_presigned_url(container, blob_name, expiry_hours=4)
+        except Exception:
+            raise HTTPException(status_code=500, detail="Failed to generate presigned URL")
+
+    # If file was primary and entitlement exists, increment download count
+    if file_record.get("FileCategory") == 'primary' and not is_owner and user_id:
+        execute_query(
+            "UPDATE retomy.Entitlements SET DownloadCount = DownloadCount + 1, LastAccessedAt = SYSUTCDATETIME() WHERE PurchaseId IN (SELECT p.PurchaseId FROM retomy.Purchases p WHERE p.DatasetId = ? AND p.BuyerId = ? AND p.Status = 'completed')",
+            [dataset_id, user_id], fetch="none"
+        )
+
+    return {"presigned_url": url, "file_id": file_id}
+
+
+@router.post("/{dataset_id}/export", status_code=status.HTTP_202_ACCEPTED)
+async def request_dataset_export(
+    dataset_id: str,
+    body: dict = Body(...),
+    user: dict = Depends(get_current_user),
+):
+    """Stub endpoint to request a server-side filtered export of a dataset.
+
+    This is a light-weight implementation that enqueues a job (not implemented)
+    and returns a job id. A real implementation would integrate with a job
+    queue and produce a presigned URL when the export is ready.
+    """
+    # Validate dataset exists
+    dataset = execute_query("SELECT DatasetId FROM retomy.Datasets WHERE DatasetId = ? AND DeletedAt IS NULL", [dataset_id], fetch="one")
+    if not dataset:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+
+    # For simplicity this stub accepts filters and returns a queued job id
+    job_id = str(uuid.uuid4())
+    # In a full impl we'd insert a job record and enqueue a worker
+    logger.info("export_requested", dataset_id=dataset_id, job_id=job_id, user_id=str(user["UserId"]))
+
+    return {"job_id": job_id, "status": "queued", "message": "Export job queued. Poll /exports/{job_id} for status."}
+
 
 
 def _refresh_thumbnail_url(url: str | None) -> str | None:

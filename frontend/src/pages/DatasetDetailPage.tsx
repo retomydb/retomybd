@@ -10,6 +10,7 @@ import {
 } from 'react-icons/fi';
 import { formatOwner } from '../utils/name';
 import PreviewPane from '../components/PreviewPane';
+import DatasetRetrievalDocs from '../components/DatasetRetrievalDocs';
 
 export default function DatasetDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -206,7 +207,7 @@ export default function DatasetDetailPage() {
           {/* Tabs */}
           <div className="border-b border-retomy-border/30">
             <div className="flex gap-6">
-              {['overview', 'preview', 'schema', 'reviews', 'license'].map(tab => (
+              {['overview', 'preview', 'schema', 'retrieve', 'reviews', 'license'].map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -278,6 +279,12 @@ export default function DatasetDetailPage() {
                     </pre>
                   </div>
                 )}
+              </div>
+            )}
+
+            {activeTab === 'retrieve' && (
+              <div>
+                <DatasetRetrievalDocs datasetId={id!} dataset={dataset} />
               </div>
             )}
 
@@ -448,6 +455,8 @@ export default function DatasetDetailPage() {
               </div>
               <div>
                 <div className="flex items-center gap-1">
+
+            
                   <span className="font-semibold text-sm text-retomy-text-bright">{formatOwner(dataset.SellerName)}</span>
                   {dataset.IsSellerVerified && <span className="text-retomy-accent text-xs">✓</span>}
                 </div>

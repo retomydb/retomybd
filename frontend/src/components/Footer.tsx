@@ -42,7 +42,7 @@ export default function Footer() {
             <h4 className="text-sm font-semibold text-retomy-text-bright uppercase tracking-wider mb-4">Sellers</h4>
             <div className="space-y-2">
               <Link to="/signup?role=seller" className="block text-sm text-retomy-text-secondary hover:text-retomy-text-bright transition-colors">Become a Seller</Link>
-              <Link to="/seller" className="block text-sm text-retomy-text-secondary hover:text-retomy-text-bright transition-colors">Seller Dashboard</Link>
+              <Link to="/seller" className="block text-sm text-retomy-text-secondary hover:text-retomy-text-bright transition-colors">My Account</Link>
               <a href="#" className="block text-sm text-retomy-text-secondary hover:text-retomy-text-bright transition-colors">Pricing & Fees</a>
               <a href="#" className="block text-sm text-retomy-text-secondary hover:text-retomy-text-bright transition-colors">Seller Guidelines</a>
             </div>

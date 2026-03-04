@@ -139,11 +139,63 @@
   }
 }
 
+/* Animated border that spins around the edges of stat cards */
+@keyframes spin-border {
+  0%   { --border-angle: 0deg; }
+  100% { --border-angle: 360deg; }
+}
+
+@property --border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.animated-border-box {
+  position: relative;
+  border-radius: 0.5rem;
+  background: #1b2838;
+  isolation: isolate;
+}
+.animated-border-box::before {
+  content: '';
+  position: absolute;
+  inset: -1.5px;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--border-angle),
+    transparent 40%,
+    var(--border-color, #6366f1) 50%,
+    transparent 60%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: spin-border 3s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+.animated-border-box:nth-child(2)::before { animation-delay: -0.75s; }
+.animated-border-box:nth-child(3)::before { animation-delay: -1.5s; }
+.animated-border-box:nth-child(4)::before { animation-delay: -2.25s; }
+
 /* Vertical dividers between items in the browse grid. Uses nth-child rules
    to only draw a right-side divider for items that are not the last column
    in a row. Matches Tailwind breakpoints used for the grid: 2 / 3 / 4 / 5 cols. */
 .browse-grid > * {
   position: relative;
+}
+
+/* Ensure divider pseudo-elements sit behind card content to avoid overlap */
+.browse-grid > * > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* mobile / default: grid-cols-2 */
@@ -155,6 +207,7 @@
   right: 0;
   width: 1px;
   background: linear-gradient(to bottom, transparent, rgba(135,152,166,0.35), transparent);
+  z-index: 0;
 }
 
 /* sm: grid-cols-3 */
@@ -167,6 +220,7 @@
     right: 0;
     width: 1px;
     background: linear-gradient(to bottom, transparent, rgba(135,152,166,0.35), transparent);
+    z-index: 0;
   }
 }
 
@@ -180,6 +234,7 @@
     right: 0;
     width: 1px;
     background: linear-gradient(to bottom, transparent, rgba(135,152,166,0.35), transparent);
+    z-index: 0;
   }
 }
 
@@ -193,5 +248,6 @@
     right: 0;
     width: 1px;
     background: linear-gradient(to bottom, transparent, rgba(135,152,166,0.35), transparent);
+    z-index: 0;
   }
 }

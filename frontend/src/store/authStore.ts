@@ -7,6 +7,7 @@ export interface User {
   first_name: string;
   last_name: string;
   display_name?: string;
+  slug?: string;
   avatar_url?: string;
   role: string;
   credits_balance: number;

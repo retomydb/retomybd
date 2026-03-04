@@ -253,3 +253,40 @@ async def admin_list_users(
 
     users = execute_query(query, params)
     return {"users": serialize_results(users)}
+
+
+@router.post("/admin/users/{user_id}/suspend")
+async def suspend_user(
+    user_id: str,
+    suspended: bool = Query(True),
+    reason: str = Query(None),
+    user: dict = Depends(require_role("admin", "superadmin")),
+):
+    """Suspend or unsuspend a user."""
+    # Prevent admin from suspending themselves
+    if str(user["UserId"]) == user_id:
+        raise HTTPException(status_code=400, detail="You cannot suspend yourself")
+
+    # Check target user exists
+    target = execute_query(
+        "SELECT UserId, Role FROM retomy.Users WHERE UserId = ? AND DeletedAt IS NULL",
+        [user_id], fetch="one"
+    )
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Prevent suspending other admins unless you are superadmin
+    if target["Role"] in ("admin", "superadmin") and user["Role"] != "superadmin":
+        raise HTTPException(status_code=403, detail="Only superadmins can suspend admins")
+
+    execute_query(
+        """UPDATE retomy.Users
+           SET IsSuspended = ?, SuspensionReason = ?, UpdatedAt = SYSUTCDATETIME()
+           WHERE UserId = ?""",
+        [1 if suspended else 0, reason if suspended else None, user_id],
+        fetch="none"
+    )
+
+    action = "suspended" if suspended else "unsuspended"
+    logger.info(f"user_{action}", target_user_id=user_id, admin_user_id=str(user["UserId"]))
+    return {"message": f"User {action} successfully"}

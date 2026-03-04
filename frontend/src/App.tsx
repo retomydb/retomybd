@@ -25,6 +25,12 @@ import AboutPage from './pages/AboutPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import ContactPage from './pages/ContactPage';
+import DocsPage from './pages/DocsPage';
+import ModelBrowsePage from './pages/ModelBrowsePage';
+import ModelDetailPage from './pages/ModelDetailPage';
+import CreateModelPage from './pages/CreateModelPage';
+import SpacesBrowsePage from './pages/SpacesBrowsePage';
+import SpaceDetailPage from './pages/SpaceDetailPage';
 
 // Layout with Navbar + Footer
 function Layout() {
@@ -153,6 +159,17 @@ function AppInner() {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/docs" element={<DocsPage />} />
+
+          {/* Hub routes — Models & Spaces */}
+          <Route path="/models" element={<ModelBrowsePage />} />
+          <Route path="/models/new" element={
+            <PrivateRoute><CreateModelPage /></PrivateRoute>
+          } />
+          <Route path="/models/:owner/:slug" element={<ModelDetailPage />} />
+          <Route path="/spaces" element={<SpacesBrowsePage />} />
+          <Route path="/spaces/:owner/:slug" element={<SpaceDetailPage />} />
+
           <Route path="/dataset/:id/manage" element={
             <PrivateRoute><ErrorBoundary><DatasetManagePage /></ErrorBoundary></PrivateRoute>
           } />

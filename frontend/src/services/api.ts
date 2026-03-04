@@ -207,6 +207,78 @@ export const dashboardApi = {
     }),
   getAdminUsers: (page = 1, role?: string) =>
     api.get('/dashboard/admin/users', { params: { page, role } }),
+  suspendUser: (userId: string, suspended: boolean, reason?: string) =>
+    api.post(`/dashboard/admin/users/${userId}/suspend`, null, {
+      params: { suspended, ...(reason ? { reason } : {}) },
+    }),
+};
+
+// ============================================================================
+// REPOS / MODELS / SPACES / DISCUSSIONS / ORGS / COLLECTIONS API (Hub)
+// ============================================================================
+export const reposApi = {
+  list: (params: Record<string, any>) => api.get('/repos', { params }),
+  create: (data: any) => api.post('/repos', data),
+  get: (owner: string, slug: string) => api.get(`/repos/${owner}/${slug}`),
+  update: (repoId: string, data: any) => api.patch(`/repos/${repoId}`, data),
+  delete: (repoId: string) => api.delete(`/repos/${repoId}`),
+  tree: (repoId: string, branch = 'main') => api.get(`/repos/${repoId}/tree`, { params: { branch } }),
+  uploadFile: (repoId: string, file: File, path: string, message = 'Upload file', branch = 'main') => {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('path', path);
+    fd.append('message', message);
+    fd.append('branch', branch);
+    return api.post(`/repos/${repoId}/upload`, fd, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 });
+  },
+  downloadFile: (repoId: string, fileId: string) => api.get(`/repos/${repoId}/files/${fileId}/download`),
+  toggleLike: (repoId: string) => api.post(`/repos/${repoId}/like`),
+  commits: (repoId: string, branch = 'main', page = 1) => api.get(`/repos/${repoId}/commits`, { params: { branch, page } }),
+};
+
+export const modelsApi = {
+  browse: (params: Record<string, any>) => api.get('/models', { params }),
+  create: (params: Record<string, any>) => api.post('/models', null, { params }),
+  get: (owner: string, slug: string) => api.get(`/models/${owner}/${slug}`),
+  updateMetadata: (repoId: string, data: any) => api.patch(`/models/${repoId}/metadata`, data),
+  updateUsageGuide: (repoId: string, usage_guide: string) => api.put(`/models/${repoId}/usage-guide`, { usage_guide }),
+  githubPreview: (url: string) => api.get('/models/github/preview', { params: { url } }),
+  githubSync: (repoId: string) => api.post(`/models/${repoId}/github-sync`),
+  filterOptions: () => api.get('/models/filters/options'),
+};
+
+export const spacesApi = {
+  browse: (params: Record<string, any>) => api.get('/spaces', { params }),
+  create: (params: Record<string, any>) => api.post('/spaces', null, { params }),
+  get: (owner: string, slug: string) => api.get(`/spaces/${owner}/${slug}`),
+  updateMetadata: (repoId: string, data: any) => api.patch(`/spaces/${repoId}/metadata`, data),
+  filterOptions: () => api.get('/spaces/filters/options'),
+};
+
+export const discussionsApi = {
+  list: (repoId: string, params?: Record<string, any>) => api.get(`/discussions/repo/${repoId}`, { params }),
+  create: (repoId: string, data: any, type = 'discussion') => api.post(`/discussions/repo/${repoId}?disc_type=${type}`, data),
+  get: (discussionId: string) => api.get(`/discussions/${discussionId}`),
+  addComment: (discussionId: string, data: { content: string }) => api.post(`/discussions/${discussionId}/comments`, data),
+  updateStatus: (discussionId: string, newStatus: string) => api.patch(`/discussions/${discussionId}/status?new_status=${newStatus}`),
+};
+
+export const orgsApi = {
+  list: (params?: Record<string, any>) => api.get('/organizations', { params }),
+  create: (data: any) => api.post('/organizations', data),
+  get: (slug: string) => api.get(`/organizations/${slug}`),
+  update: (slug: string, data: any) => api.patch(`/organizations/${slug}`, data),
+  addMember: (slug: string, data: { user_id: string; role?: string }) => api.post(`/organizations/${slug}/members`, data),
+  removeMember: (slug: string, userId: string) => api.delete(`/organizations/${slug}/members/${userId}`),
+};
+
+export const collectionsApi = {
+  list: (params?: Record<string, any>) => api.get('/collections', { params }),
+  create: (data: any) => api.post('/collections', data),
+  get: (id: string) => api.get(`/collections/${id}`),
+  addItem: (id: string, data: { repo_id: string; note?: string }) => api.post(`/collections/${id}/items`, data),
+  removeItem: (id: string, itemId: string) => api.delete(`/collections/${id}/items/${itemId}`),
+  delete: (id: string) => api.delete(`/collections/${id}`),
 };
 
 /**

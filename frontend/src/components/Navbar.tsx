@@ -36,9 +36,10 @@ export default function Navbar() {
             </Link>
 
             <div className="hidden md:flex items-center gap-6">
-              <Link to="/browse" className="nav-link">Store</Link>
-              <Link to="/browse?sort_by=downloads" className="nav-link">Popular</Link>
-              <Link to="/browse?pricing_model=free" className="nav-link">Free</Link>
+              <Link to="/browse" className="nav-link">Datasets</Link>
+              <Link to="/models" className="nav-link">Models</Link>
+              <Link to="/spaces" className="nav-link">Spaces</Link>
+              <Link to="/docs" className="nav-link">Docs</Link>
               {isAuthenticated && (
                 <Link to="/seller" className="nav-link">Sell</Link>
               )}
@@ -127,7 +128,7 @@ export default function Navbar() {
                           {isAuthenticated && (
                             <Link to="/seller" onClick={() => setShowUserMenu(false)}
                               className="flex items-center gap-3 px-3 py-2 text-sm text-retomy-text hover:bg-retomy-bg-hover hover:text-retomy-text-bright">
-                              <FiUpload size={14} /> Seller Dashboard
+                              <FiUpload size={14} /> My Account
                             </Link>
                           )}
                           {(user?.role === 'admin' || user?.role === 'superadmin') && (

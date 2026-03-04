@@ -19,6 +19,7 @@ import time
 from core.config import get_settings
 from core.storage import ensure_containers
 from routers import auth, datasets, users, purchases, dashboard, payments
+from routers import repos, models, spaces, discussions, organizations, collections
 from fastapi.staticfiles import StaticFiles
 
 settings = get_settings()
@@ -107,6 +108,14 @@ app.include_router(users.router, prefix=API_PREFIX)
 app.include_router(purchases.router, prefix=API_PREFIX)
 app.include_router(dashboard.router, prefix=API_PREFIX)
 app.include_router(payments.router, prefix=API_PREFIX)
+
+# Hub routers (HuggingFace-style)
+app.include_router(repos.router, prefix=API_PREFIX)
+app.include_router(models.router, prefix=API_PREFIX)
+app.include_router(spaces.router, prefix=API_PREFIX)
+app.include_router(discussions.router, prefix=API_PREFIX)
+app.include_router(organizations.router, prefix=API_PREFIX)
+app.include_router(collections.router, prefix=API_PREFIX)
 
 # Serve local static files (used as a fallback for Azurite in development)
 static_dir = Path(__file__).resolve().parent / "static"

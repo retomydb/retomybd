@@ -215,6 +215,7 @@ async def get_me(user: dict = Depends(get_current_user)):
         "first_name": user["FirstName"],
         "last_name": user["LastName"],
         "display_name": user.get("DisplayName"),
+        "slug": user.get("Slug"),
         "avatar_url": user.get("AvatarUrl"),
         "bio": user.get("Bio"),
         "company": user.get("Company"),

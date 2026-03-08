@@ -17,7 +17,7 @@ BEGIN
         Description     NVARCHAR(1000)      NULL,
         Website         NVARCHAR(300)       NULL,
         IsVerified      BIT                 NOT NULL DEFAULT 0,
-        Plan            NVARCHAR(20)        NOT NULL DEFAULT 'free',
+        [Plan]            NVARCHAR(20)        NOT NULL DEFAULT 'free',
         CreatedAt       DATETIME2           NOT NULL DEFAULT SYSUTCDATETIME(),
         UpdatedAt       DATETIME2           NOT NULL DEFAULT SYSUTCDATETIME(),
 

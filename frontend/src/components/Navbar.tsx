@@ -108,8 +108,8 @@ export default function Navbar() {
                   {showUserMenu && (
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
-                      <div className="absolute right-0 top-full mt-2 w-56 bg-retomy-bg-card border border-retomy-border rounded shadow-card z-50 animate-fade-in">
-                        <div className="p-3 border-b border-retomy-border/40">
+                      <div className="absolute right-0 top-full mt-2 w-56 card overflow-hidden z-50 animate-fade-in">
+                        <div className="p-3 border-b border-retomy-border/40 bg-retomy-bg-card">
                           <p className="text-sm font-medium text-retomy-text-bright truncate">{user?.display_name}</p>
                           <p className="text-xs text-retomy-text-secondary truncate">{user?.email}</p>
                           <p className="text-xs text-retomy-accent mt-1">

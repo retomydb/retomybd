@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { HiCube, HiDownload, HiHeart, HiCode, HiDocumentText, HiChat, HiFolder, HiClock, HiTag } from 'react-icons/hi';
+import { HiCube, HiDownload, HiHeart, HiCode, HiDocumentText, HiChat, HiFolder, HiClock, HiTag, HiClipboardCopy, HiExternalLink } from 'react-icons/hi';
 import toast from 'react-hot-toast';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
@@ -33,6 +37,14 @@ interface ModelData {
   ParameterCount: number | null;
   TensorType: string | null;
   PipelineTag: string | null;
+  SafeTensors: boolean | null;
+  InferenceEnabled: boolean | null;
+  OriginalModelId: string | null;
+  // Rich content
+  GithubReadme: string | null;
+  UsageGuide: string | null;
+  EvalResults: string | null;
+  HostingType: string | null;
   tags: string[];
   liked_by_user: boolean;
 }
@@ -43,6 +55,72 @@ interface RepoFile {
   SizeBytes: number;
   ContentType: string | null;
   Sha256: string | null;
+}
+
+// ── Usage Snippets Sub-component ──────────────────────────────────────────────
+
+const SNIPPET_LABELS: Record<string, string> = {
+  pipeline: 'Pipeline',
+  direct: 'Direct Loading',
+  diffusers: 'Diffusers',
+  sentence_transformers: 'Sentence Transformers',
+  peft: 'PEFT / LoRA',
+  gguf: 'GGUF (llama.cpp)',
+  generic: 'General',
+};
+
+function UsageSnippets({ snippets }: { snippets: Record<string, string> }) {
+  const entries = Object.entries(snippets);
+  const [activeSnippet, setActiveSnippet] = useState(entries[0]?.[0] || '');
+
+  if (entries.length === 0) return null;
+
+  return (
+    <div>
+      {entries.length > 1 && (
+        <div className="flex gap-1 mb-3 flex-wrap">
+          {entries.map(([key]) => (
+            <button
+              key={key}
+              onClick={() => setActiveSnippet(key)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                activeSnippet === key
+                  ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30'
+                  : 'bg-white/5 text-white/40 border border-transparent hover:bg-white/10 hover:text-white/60'
+              }`}
+            >
+              {SNIPPET_LABELS[key] || key}
+            </button>
+          ))}
+        </div>
+      )}
+      {entries.map(([key, code]) => (
+        <div key={key} className={activeSnippet === key ? 'block' : 'hidden'}>
+          <div className="relative group">
+            <SyntaxHighlighter
+              language="python"
+              style={oneDark}
+              customStyle={{
+                background: 'rgba(0,0,0,0.3)',
+                borderRadius: '0.75rem',
+                border: '1px solid rgba(255,255,255,0.05)',
+                fontSize: '0.8rem',
+                padding: '1rem',
+              }}
+            >
+              {code}
+            </SyntaxHighlighter>
+            <button
+              onClick={() => { navigator.clipboard.writeText(code); toast.success('Copied!'); }}
+              className="absolute top-3 right-3 p-1.5 rounded-lg bg-white/10 text-white/40 hover:text-white/80 opacity-0 group-hover:opacity-100 transition-all"
+            >
+              <HiClipboardCopy className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function ModelDetailPage() {
@@ -57,6 +135,11 @@ export default function ModelDetailPage() {
     if (owner && slug) fetchModel();
   }, [owner, slug]);
 
+  // Display OriginalModelId when available, otherwise fallback to owner/name
+  function displayOriginalId(orig?: string | null, ownerName?: string | null, name?: string) {
+    return orig || `${ownerName || owner}/${name}`;
+  }
+
   async function fetchModel() {
     setLoading(true);
     try {
@@ -67,8 +150,17 @@ export default function ModelDetailPage() {
       const res = await fetch(`${API_BASE}/models/${owner}/${slug}`, { headers });
       if (!res.ok) throw new Error('Model not found');
       const data = await res.json();
-      setModel(data);
-      setLiked(data.liked_by_user || false);
+      // normalize missing fields to avoid render crashes
+      const normalized = {
+        tags: [],
+        TotalDownloads: 0,
+        TotalLikes: 0,
+        TotalViews: 0,
+        ParameterCount: null,
+        ...data,
+      } as any;
+      setModel(normalized);
+      setLiked(Boolean(normalized.liked_by_user));
 
       // Fetch files
       const filesRes = await fetch(`${API_BASE}/repos/${data.RepoId}/tree?branch=main`, { headers });
@@ -142,9 +234,9 @@ export default function ModelDetailPage() {
           <div className="flex items-center gap-2 text-sm text-white/30 mb-4">
             <Link to="/models" className="hover:text-white/60 transition-colors">Models</Link>
             <span>/</span>
-            <span className="text-white/50">{model.owner_name || owner}</span>
+            <span className="text-white/50">{displayOriginalId(model.OriginalModelId, model.owner_name, model.Name).split('/')[0]}</span>
             <span>/</span>
-            <span className="text-white/70">{model.Name}</span>
+            <span className="text-white/70">{displayOriginalId(model.OriginalModelId, model.owner_name, model.Name).split('/')[1] || model.Name}</span>
           </div>
 
           <div className="flex items-start justify-between">
@@ -153,7 +245,10 @@ export default function ModelDetailPage() {
                 <HiCube className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white">{model.owner_name || owner} <span className="text-white/30">/</span> {model.Name}</h1>
+                <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <img src="https://huggingface.co/front/assets/huggingface_logo.svg" alt="Hugging Face" className="w-4 h-4 inline-block" />
+                  <span>{displayOriginalId(model.OriginalModelId, model.owner_name, model.Name)}</span>
+                </h1>
                 {model.Description && <p className="text-white/40 text-sm mt-1 max-w-2xl">{model.Description}</p>}
               </div>
             </div>
@@ -174,12 +269,12 @@ export default function ModelDetailPage() {
           </div>
 
           {/* Tags */}
-          {(model.tags.length > 0 || model.Task || model.Framework) && (
+          {(((model.tags && model.tags.length) || 0) > 0 || model.Task || model.Framework) && (
             <div className="flex items-center gap-2 mt-3 flex-wrap">
               {model.Task && <span className="px-2.5 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs">{model.Task}</span>}
               {model.Framework && <span className="px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs">{model.Framework}</span>}
               {model.PipelineTag && <span className="px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs">{model.PipelineTag}</span>}
-              {model.tags.map(tag => (
+              {(model.tags || []).map((tag: string) => (
                 <span key={tag} className="px-2.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs">{tag}</span>
               ))}
             </div>
@@ -216,31 +311,92 @@ export default function ModelDetailPage() {
           {/* Main content */}
           <div className="lg:col-span-3">
             {activeTab === 'card' && (
-              <div className="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-2xl p-6">
-                <h2 className="text-lg font-semibold text-white mb-4">Model Card</h2>
-                <div className="prose prose-invert prose-sm max-w-none">
-                  <p className="text-white/50">
-                    {model.Description || 'No model card provided yet. The author can add a README.md to describe this model.'}
-                  </p>
-                  {model.Architecture && (
-                    <div className="mt-4">
-                      <h3 className="text-white/70 text-sm font-medium">Architecture</h3>
-                      <p className="text-white/40 text-sm">{model.Architecture}</p>
-                    </div>
-                  )}
-                  {model.BaseModel && (
-                    <div className="mt-4">
-                      <h3 className="text-white/70 text-sm font-medium">Base Model</h3>
-                      <p className="text-white/40 text-sm">{model.BaseModel}</p>
-                    </div>
-                  )}
-                  {model.ParameterCount && (
-                    <div className="mt-4">
-                      <h3 className="text-white/70 text-sm font-medium">Parameters</h3>
-                      <p className="text-white/40 text-sm">{formatNumber(model.ParameterCount)}</p>
-                    </div>
-                  )}
+              <div className="space-y-6">
+                {/* Model Card / README */}
+                <div className="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-2xl p-6">
+                  <h2 className="text-lg font-semibold text-white mb-4">Model Card</h2>
+                  <div className="prose prose-invert prose-sm max-w-none
+                    prose-headings:text-white/90 prose-p:text-white/60 prose-a:text-violet-400
+                    prose-strong:text-white/80 prose-code:text-violet-300 prose-code:bg-white/5
+                    prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs
+                    prose-pre:bg-transparent prose-pre:p-0
+                    prose-li:text-white/60 prose-blockquote:border-violet-500/30
+                    prose-blockquote:text-white/50 prose-hr:border-white/10
+                    prose-table:text-white/60 prose-th:text-white/80
+                    prose-img:rounded-lg prose-img:max-w-full">
+                    {model.GithubReadme ? (
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          code({ className, children, ...props }) {
+                            const match = /language-(\w+)/.exec(className || '');
+                            const inline = !match && !className;
+                            return !inline ? (
+                              <SyntaxHighlighter
+                                style={oneDark}
+                                language={match ? match[1] : 'text'}
+                                PreTag="div"
+                                customStyle={{
+                                  background: 'rgba(0,0,0,0.3)',
+                                  borderRadius: '0.75rem',
+                                  border: '1px solid rgba(255,255,255,0.05)',
+                                  fontSize: '0.8rem',
+                                }}
+                              >
+                                {String(children).replace(/\n$/, '')}
+                              </SyntaxHighlighter>
+                            ) : (
+                              <code className={className} {...props}>{children}</code>
+                            );
+                          }
+                        }}
+                      >
+                        {model.GithubReadme}
+                      </ReactMarkdown>
+                    ) : (
+                      <>
+                        <p className="text-white/50">
+                          {model.Description || 'No model card provided yet. The author can add a README.md to describe this model.'}
+                        </p>
+                        {model.Architecture && (
+                          <div className="mt-4">
+                            <h3 className="text-white/70 text-sm font-medium">Architecture</h3>
+                            <p className="text-white/40 text-sm">{model.Architecture}</p>
+                          </div>
+                        )}
+                        {model.BaseModel && (
+                          <div className="mt-4">
+                            <h3 className="text-white/70 text-sm font-medium">Base Model</h3>
+                            <p className="text-white/40 text-sm">{model.BaseModel}</p>
+                          </div>
+                        )}
+                        {model.ParameterCount && (
+                          <div className="mt-4">
+                            <h3 className="text-white/70 text-sm font-medium">Parameters</h3>
+                            <p className="text-white/40 text-sm">{formatNumber(model.ParameterCount)}</p>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
+
+                {/* Usage Snippets */}
+                {model.UsageGuide && (() => {
+                  try {
+                    const snippets = JSON.parse(model.UsageGuide) as Record<string, string>;
+                    const entries = Object.entries(snippets);
+                    if (entries.length === 0) return null;
+                    return (
+                      <div className="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-2xl p-6">
+                        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                          <HiCode className="w-5 h-5 text-violet-400" /> Usage Examples
+                        </h2>
+                        <UsageSnippets snippets={snippets} />
+                      </div>
+                    );
+                  } catch { return null; }
+                })()}
               </div>
             )}
 
@@ -283,15 +439,46 @@ export default function ModelDetailPage() {
           <div className="space-y-4">
             {/* Use this model */}
             <div className="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-2xl p-5">
-              <h3 className="text-sm font-semibold text-white mb-3">Use this model</h3>
-              {model.Library && (
+              <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                <HiCode className="w-4 h-4 text-violet-400" /> Use this model
+              </h3>
+              {model.UsageGuide ? (() => {
+                try {
+                  const snippets = JSON.parse(model.UsageGuide) as Record<string, string>;
+                  const first = snippets['pipeline'] || snippets['direct'] || Object.values(snippets)[0];
+                  if (!first) return null;
+                  return (
+                    <div className="relative group">
+                      <div className="bg-black/40 rounded-lg p-3 mb-3 overflow-x-auto">
+                        <pre className="text-xs text-green-300 whitespace-pre font-mono">{first}</pre>
+                      </div>
+                      <button
+                        onClick={() => { navigator.clipboard.writeText(first); toast.success('Copied!'); }}
+                        className="absolute top-2 right-2 p-1.5 rounded-lg bg-white/10 text-white/40 hover:text-white/80 opacity-0 group-hover:opacity-100 transition-all"
+                      >
+                        <HiClipboardCopy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  );
+                } catch { return null; }
+              })() : model.Library ? (
                 <div className="bg-black/30 rounded-lg p-3 mb-3">
                   <code className="text-xs text-green-300">
                     {model.Library === 'transformers'
-                      ? `from transformers import AutoModel\nmodel = AutoModel.from_pretrained("${owner}/${model.Slug}")`
-                      : `# Install: pip install ${model.Library}\n# Load: ${model.Library}.load("${owner}/${model.Slug}")`}
+                      ? 'from transformers import AutoModel\nmodel = AutoModel.from_pretrained("' + (model.OriginalModelId || (model.owner_slug || owner) + '/' + model.Slug) + '")'
+                      : '# Install: pip install ' + model.Library + '\n# Load: ' + model.Library + '.load("' + (model.OriginalModelId || (model.owner_slug || owner) + '/' + model.Slug) + '")'}
                   </code>
                 </div>
+              ) : null}
+              {model.OriginalModelId && (
+                <a
+                  href={`https://huggingface.co/${model.OriginalModelId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 mb-3 transition-colors"
+                >
+                  <HiExternalLink className="w-3.5 h-3.5" /> View on Hugging Face
+                </a>
               )}
               {model.PricingModel === 'one_time' && model.Price > 0 ? (
                 <button className="w-full py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity">
@@ -311,10 +498,16 @@ export default function ModelDetailPage() {
                 {model.Task && <div className="flex justify-between"><dt className="text-white/40">Task</dt><dd className="text-white/70">{model.Task}</dd></div>}
                 {model.Framework && <div className="flex justify-between"><dt className="text-white/40">Framework</dt><dd className="text-white/70">{model.Framework}</dd></div>}
                 {model.Library && <div className="flex justify-between"><dt className="text-white/40">Library</dt><dd className="text-white/70">{model.Library}</dd></div>}
+                {model.Architecture && <div className="flex justify-between"><dt className="text-white/40">Architecture</dt><dd className="text-white/70 text-right max-w-[160px] truncate" title={model.Architecture}>{model.Architecture}</dd></div>}
                 {model.ModelLanguage && <div className="flex justify-between"><dt className="text-white/40">Language</dt><dd className="text-white/70">{model.ModelLanguage}</dd></div>}
+                {model.BaseModel && <div className="flex justify-between"><dt className="text-white/40">Base Model</dt><dd className="text-white/70 text-right max-w-[160px] truncate" title={model.BaseModel}>{model.BaseModel}</dd></div>}
+                {model.ParameterCount && <div className="flex justify-between"><dt className="text-white/40">Parameters</dt><dd className="text-white/70">{formatNumber(model.ParameterCount)}</dd></div>}
                 {model.TensorType && <div className="flex justify-between"><dt className="text-white/40">Tensor Type</dt><dd className="text-white/70">{model.TensorType}</dd></div>}
+                {model.SafeTensors && <div className="flex justify-between"><dt className="text-white/40">SafeTensors</dt><dd className="text-green-400 text-xs px-2 py-0.5 bg-green-500/10 rounded-full">Yes</dd></div>}
+                {model.InferenceEnabled && <div className="flex justify-between"><dt className="text-white/40">Inference API</dt><dd className="text-cyan-400 text-xs px-2 py-0.5 bg-cyan-500/10 rounded-full">Enabled</dd></div>}
                 <div className="flex justify-between"><dt className="text-white/40">Downloads</dt><dd className="text-white/70">{formatNumber(model.TotalDownloads)}</dd></div>
                 <div className="flex justify-between"><dt className="text-white/40">Views</dt><dd className="text-white/70">{formatNumber(model.TotalViews)}</dd></div>
+                {model.HostingType && <div className="flex justify-between"><dt className="text-white/40">Source</dt><dd className="text-white/70 capitalize">{model.HostingType}</dd></div>}
               </dl>
             </div>
           </div>

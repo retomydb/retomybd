@@ -157,19 +157,22 @@ export default function HomePage() {
 
           {/* Stats Cards - modern responsive layout */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mt-28 pt-8">
-            {/* Datasets + Free combined */}
+            {/* Datasets + Models */}
             <div className="animated-border-box p-4 flex flex-col items-center justify-center text-center hover:shadow-lg transition-shadow" style={{ '--border-color': '#6366f1' } as React.CSSProperties}>
-              <div className="w-10 h-10 rounded-full bg-indigo-400/10 flex items-center justify-center mb-2">
-                <FiDatabase className="text-indigo-400" size={18} />
-              </div>
               <div className="grid grid-cols-2 gap-4 w-full">
                 <div className="flex flex-col items-center">
+                  <div className="w-10 h-10 rounded-full bg-indigo-400/10 flex items-center justify-center mb-2">
+                    <FiDatabase className="text-indigo-400" size={18} />
+                  </div>
                   <div className="text-2xl lg:text-3xl font-extrabold text-retomy-text-bright">{stats.TotalDatasets ?? '0'}</div>
                   <div className="text-[10px] uppercase text-retomy-text-secondary tracking-widest mt-1">Datasets</div>
                 </div>
                 <div className="flex flex-col items-center">
-                  <div className="text-2xl lg:text-3xl font-extrabold text-retomy-text-bright">{stats.FreeDatasets ?? '0'}</div>
-                  <div className="text-[10px] uppercase text-retomy-text-secondary tracking-widest mt-1">Free</div>
+                  <div className="w-10 h-10 rounded-full bg-indigo-400/10 flex items-center justify-center mb-2">
+                    <FiCode className="text-indigo-400" size={18} />
+                  </div>
+                  <div className="text-2xl lg:text-3xl font-extrabold text-retomy-text-bright">{stats.TotalModels ?? '0'}</div>
+                  <div className="text-[10px] uppercase text-retomy-text-secondary tracking-widest mt-1">Models</div>
                 </div>
               </div>
             </div>

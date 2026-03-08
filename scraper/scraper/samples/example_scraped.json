@@ -1,0 +1,34 @@
+[
+  {
+    "model_id": "facebook/opt-350m",
+    "name": "opt-350m",
+    "description": "OPT 350M model (example)",
+    "tags": ["nlp", "generation"],
+    "private": false,
+    "pipeline_tag": "text-generation",
+    "raw": {"example_key": "example_value"},
+    "framework": "pytorch",
+    "task": "text-generation",
+    "library": "transformers",
+    "architecture": "opt",
+    "language": "en",
+    "base_model": "opt",
+    "parameter_count": 350000000
+  },
+  {
+    "model_id": "huggingface/bert-base-uncased",
+    "name": "bert-base-uncased",
+    "description": "BERT base model (example)",
+    "tags": ["nlp", "classification"],
+    "private": false,
+    "pipeline_tag": "fill-mask",
+    "raw": {"example_key": "example_value2"},
+    "framework": "pytorch",
+    "task": "masked-language-modeling",
+    "library": "transformers",
+    "architecture": "bert",
+    "language": "en",
+    "base_model": "bert",
+    "parameter_count": 110000000
+  }
+]

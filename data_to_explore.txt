@@ -1,0 +1,57 @@
+1. Kaggle
+One of the largest AI/data science communities.
+What it offers
+Datasets
+ML notebooks
+Competitions
+Pretrained models
+Why people use it
+Huge dataset library
+Free GPUs for notebooks
+Strong community
+Best for: data science and dataset discovery
+2. Replicate
+A platform to run AI models via API instantly.
+What it offers
+Hosted AI models
+API access
+pay-per-use inference
+Popular models:
+Stable Diffusion
+LLaMA
+Image upscalers
+Best for: deploying models quickly
+3. Papers with Code
+Connects research papers with code implementations.
+What it offers
+ML papers
+model implementations
+benchmark leaderboards
+Best for: discovering new AI research and implementations
+4. OpenML
+A platform focused on datasets and experiments.
+What it offers
+public ML datasets
+experiment tracking
+reproducible benchmarks
+Best for: research experiments
+5. ModelScope
+Often called the Chinese equivalent of Hugging Face.
+What it offers
+pretrained models
+datasets
+AI demos
+Best for: large model collections
+6. GitHub
+Many AI models are published here first.
+What it offers
+AI repositories
+pretrained weights
+model implementations
+Best for: open-source AI projects
+7. TensorFlow Hub
+What it offers
+pretrained TensorFlow models
+embeddings
+NLP and vision models
+Best for: TensorFlow ecosystem

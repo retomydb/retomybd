@@ -222,12 +222,20 @@ async def get_homepage_data():
         _refresh_thumbnails_in_list(trending)
         _refresh_thumbnails_in_list(new_arrivals)
 
+        # Ensure platform_stats includes TotalModels
+        platform_stats = results[4][0] if len(results) > 4 and results[4] else {}
+        try:
+            models_count = execute_query("SELECT COUNT(*) AS cnt FROM retomy.Repositories WHERE RepoType = 'model' AND DeletedAt IS NULL", fetch="one")
+            platform_stats["TotalModels"] = int(models_count["cnt"]) if models_count else 0
+        except Exception:
+            platform_stats.setdefault("TotalModels", 0)
+
         return {
             "featured": featured,
             "trending": trending,
             "new_arrivals": new_arrivals,
             "categories": serialize_list(results[3]) if len(results) > 3 else [],
-            "platform_stats": results[4][0] if len(results) > 4 and results[4] else {},
+            "platform_stats": platform_stats,
         }
     except Exception as e:
         logger.error("homepage_data_failed", error=str(e))

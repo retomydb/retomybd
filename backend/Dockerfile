@@ -47,6 +47,9 @@ COPY --chown=retomy:retomy . .
 # Remove unnecessary files
 RUN rm -rf __pycache__ .pytest_cache tests/ *.md
 
+# Ensure /app/static exists and is writable by the app user
+RUN mkdir -p /app/static && chown -R retomy:retomy /app
+
 USER retomy
 
 EXPOSE 8000

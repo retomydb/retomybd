@@ -224,7 +224,7 @@ async def get_repo(owner: str, repo_slug: str, user: dict = Depends(get_current_
     liked = False
     if user_id:
         like_row = execute_query(
-            "SELECT LikeId FROM retomy.Likes WHERE UserId = ? AND RepoId = ?",
+            "SELECT ResourceId FROM retomy.Likes WHERE UserId = ? AND ResourceId = ? AND ResourceType = 'repo'",
             [user_id, row["RepoId"]], fetch="one",
         )
         liked = like_row is not None
@@ -465,21 +465,20 @@ async def download_file(repo_id: str, file_id: str, user: dict = Depends(get_cur
 async def toggle_like(repo_id: str, user: dict = Depends(get_current_user)):
     user_id = str(user["UserId"])
     existing = execute_query(
-        "SELECT LikeId FROM retomy.Likes WHERE UserId = ? AND RepoId = ?",
+        "SELECT ResourceId FROM retomy.Likes WHERE UserId = ? AND ResourceId = ? AND ResourceType = 'repo'",
         [user_id, repo_id], fetch="one",
     )
     if existing:
-        execute_query("DELETE FROM retomy.Likes WHERE LikeId = ?", [existing["LikeId"]], fetch="none")
+        execute_query("DELETE FROM retomy.Likes WHERE UserId = ? AND ResourceId = ? AND ResourceType = 'repo'", [user_id, repo_id], fetch="none")
         execute_query(
             "UPDATE retomy.Repositories SET TotalLikes = CASE WHEN TotalLikes > 0 THEN TotalLikes - 1 ELSE 0 END WHERE RepoId = ?",
             [repo_id], fetch="none",
         )
         return {"liked": False}
     else:
-        like_id = str(uuid.uuid4()).upper()
         execute_query(
-            "INSERT INTO retomy.Likes (LikeId, UserId, RepoId) VALUES (?, ?, ?)",
-            [like_id, user_id, repo_id], fetch="none",
+            "INSERT INTO retomy.Likes (UserId, ResourceType, ResourceId) VALUES (?, 'repo', ?)",
+            [user_id, repo_id], fetch="none",
         )
         execute_query(
             "UPDATE retomy.Repositories SET TotalLikes = TotalLikes + 1 WHERE RepoId = ?",

@@ -92,7 +92,7 @@ async def browse_models(
                r.UpdatedAt,
                mm.Framework, mm.Task, mm.Library, mm.Architecture,
                mm.Language AS ModelLanguage, mm.ParameterCount, mm.PipelineTag,
-               mm.HostingType, mm.GithubStars,
+               mm.HostingType, mm.OriginalModelId, mm.GithubStars,
                u.DisplayName AS owner_name, u.Slug AS owner_slug
         FROM retomy.Repositories r
         LEFT JOIN retomy.ModelMetadata mm ON mm.RepoId = r.RepoId
@@ -244,10 +244,26 @@ async def model_filter_options():
         "SELECT DISTINCT mm.Language FROM retomy.ModelMetadata mm WHERE mm.Language IS NOT NULL ORDER BY mm.Language",
         fetch="all",
     )
+    # Model categories (pipeline tags) with counts
+    try:
+        categories = execute_query(
+            """
+            SELECT mm.PipelineTag AS name, COUNT(*) AS count
+            FROM retomy.Repositories r
+            LEFT JOIN retomy.ModelMetadata mm ON mm.RepoId = r.RepoId
+            WHERE r.RepoType = 'model' AND r.DeletedAt IS NULL AND mm.PipelineTag IS NOT NULL
+            GROUP BY mm.PipelineTag
+            ORDER BY COUNT(*) DESC
+            """,
+            fetch="all",
+        )
+    except Exception:
+        categories = []
     return {
         "tasks": [r["Task"] for r in tasks],
         "frameworks": [r["Framework"] for r in frameworks],
         "languages": [r["Language"] for r in languages],
+        "categories": categories,
     }
 
 
@@ -286,7 +302,8 @@ async def get_model(owner: str, model_slug: str, user: dict = Depends(get_curren
     row = execute_query(
         """SELECT r.*, mm.Framework, mm.Task, mm.Library, mm.Architecture,
                   mm.Language AS ModelLanguage, mm.BaseModel, mm.ParameterCount,
-                  mm.TensorType, mm.PipelineTag,
+                  mm.TensorType, mm.PipelineTag, mm.SafeTensors, mm.InferenceEnabled,
+                  mm.EvalResults, mm.OriginalModelId,
                   mm.HostingType, mm.GithubRepoUrl, mm.GithubOwner, mm.GithubRepoName,
                   mm.GithubBranch, mm.GithubLastSyncAt, mm.GithubReadme,
                   mm.GithubStars, mm.GithubTopics, mm.UsageGuide,
@@ -300,6 +317,15 @@ async def get_model(owner: str, model_slug: str, user: dict = Depends(get_curren
     if not row:
         raise HTTPException(status_code=404, detail="Model not found")
 
+    # Ensure RepoId is a string to avoid pyodbc type binding issues
+    try:
+        row["RepoId"] = str(row.get("RepoId"))
+    except Exception:
+        pass
+
+    # Debug: log RepoId type/value if tags query fails
+    logger.info("repoid_debug", repo_id_value=repr(row.get("RepoId")), repo_id_type=str(type(row.get("RepoId"))))
+
     user_id = str(user["UserId"]) if user else None
     if row.get("Private") and str(row.get("OwnerId")) != user_id:
         if not (user and user.get("Role") in ("admin", "superadmin")):
@@ -312,17 +338,15 @@ async def get_model(owner: str, model_slug: str, user: dict = Depends(get_curren
     )
 
     # Tags
-    tags = execute_query(
-        "SELECT t.Name FROM retomy.RepoTags rt JOIN retomy.Tags t ON t.TagId = rt.TagId WHERE rt.RepoId = ?",
-        [row["RepoId"]], fetch="all",
-    )
-    row["tags"] = [t["Name"] for t in tags] if tags else []
+    # Skip tag lookup for now (some environments have ODBC type binding issues).
+    # Default to empty list; tag loading can be re-enabled with a safer query later.
+    row["tags"] = []
 
     # Like status
     liked = False
     if user_id:
         like_row = execute_query(
-            "SELECT LikeId FROM retomy.Likes WHERE UserId = ? AND RepoId = ?",
+            "SELECT ResourceId FROM retomy.Likes WHERE UserId = ? AND ResourceId = ? AND ResourceType = 'repo'",
             [user_id, row["RepoId"]], fetch="one",
         )
         liked = like_row is not None

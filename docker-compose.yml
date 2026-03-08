@@ -15,8 +15,11 @@ services:
     env_file:
       - .env
     environment:
-      - MSSQL_HOST=${MSSQL_HOST:-host.docker.internal}
-      - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING}
+      - MSSQL_HOST=host.docker.internal
+      - AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://host.docker.internal:10000/devstoreaccount1;QueueEndpoint=http://host.docker.internal:10001/devstoreaccount1;TableEndpoint=http://host.docker.internal:10002/devstoreaccount1;
+      - AZURE_BLOB_ENDPOINT=http://host.docker.internal:10000/devstoreaccount1
+      - AZURE_QUEUE_ENDPOINT=http://host.docker.internal:10001/devstoreaccount1
+      - AZURE_TABLE_ENDPOINT=http://host.docker.internal:10002/devstoreaccount1
       - ENVIRONMENT=${ENVIRONMENT:-production}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -71,7 +74,7 @@ services:
     env_file:
       - .env
     environment:
-      - MSSQL_HOST=${MSSQL_HOST:-host.docker.internal}
+      - MSSQL_HOST=host.docker.internal
     volumes:
       - ./database:/migrations:ro
     command: ["python", "/migrations/migrate.py"]

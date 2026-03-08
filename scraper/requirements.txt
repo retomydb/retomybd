@@ -1,0 +1,6 @@
+requests
+beautifulsoup4
+SQLAlchemy>=1.4
+pyodbc
+python-dotenv
+aiohttp

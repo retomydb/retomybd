@@ -16,6 +16,9 @@ from contextlib import asynccontextmanager
 import structlog
 import time
 
+import asyncio
+import concurrent.futures
+
 from core.config import get_settings
 from core.storage import ensure_containers
 from routers import auth, datasets, users, purchases, dashboard, payments
@@ -31,10 +34,16 @@ async def lifespan(app: FastAPI):
     """Application startup and shutdown events."""
     logger.info("retomY_starting", environment=settings.ENVIRONMENT)
 
-    # Initialize Azure Blob Storage containers
+    # Initialize Azure Blob Storage containers (with timeout so server starts even if Azure is unreachable)
     try:
-        ensure_containers()
+        with concurrent.futures.ThreadPoolExecutor() as pool:
+            await asyncio.wait_for(
+                asyncio.get_event_loop().run_in_executor(pool, ensure_containers),
+                timeout=10,
+            )
         logger.info("azure_storage_initialized")
+    except asyncio.TimeoutError:
+        logger.warning("azure_storage_init_timeout", msg="Timed out after 10s — starting without Azure")
     except Exception as e:
         logger.warning("azure_storage_init_warning", error=str(e))
 

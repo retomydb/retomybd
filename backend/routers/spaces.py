@@ -177,7 +177,7 @@ async def get_space(owner: str, space_slug: str, user: dict = Depends(get_curren
     liked = False
     if user_id:
         like_row = execute_query(
-            "SELECT LikeId FROM retomy.Likes WHERE UserId = ? AND RepoId = ?",
+            "SELECT ResourceId FROM retomy.Likes WHERE UserId = ? AND ResourceId = ? AND ResourceType = 'repo'",
             [user_id, row["RepoId"]], fetch="one",
         )
         liked = like_row is not None

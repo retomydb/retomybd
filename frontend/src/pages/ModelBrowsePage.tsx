@@ -25,6 +25,7 @@ interface ModelItem {
   owner_slug: string | null;
   UpdatedAt?: string;
   CreatedAt?: string;
+  OriginalModelId?: string | null;
 }
 
 const TASK_OPTIONS = [
@@ -111,6 +112,11 @@ export default function ModelBrowsePage() {
     const months = Math.floor(days / 30);
     if (months < 12) return `${months}mo ago`;
     return `${Math.floor(months / 12)}y ago`;
+  }
+
+  // Display OriginalModelId when available, otherwise fallback to owner/name
+  function displayOriginalId(orig?: string | null, ownerName?: string | null, name?: string) {
+    return orig || `${ownerName || 'user'}/${name}`;
   }
 
   // Task → emoji mapping for visual flair (HF-style)
@@ -284,9 +290,10 @@ export default function ModelBrowsePage() {
                 {/* Model name */}
                 <div className="flex items-start gap-2 mb-2">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-[13px] font-semibold text-white group-hover:text-violet-300 transition-colors truncate">
-                      <span className="text-white/40 font-normal">{model.owner_name || 'user'} / </span>
-                      {model.Name}
+                    <h3 className="text-[13px] font-semibold text-white group-hover:text-violet-300 transition-colors truncate flex items-center gap-2">
+                      <span className="truncate">
+                        {displayOriginalId(model.OriginalModelId, model.owner_name, model.Name)}
+                      </span>
                     </h3>
                   </div>
                 </div>

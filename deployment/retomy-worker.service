@@ -1,0 +1,16 @@
+[Unit]
+Description=retomY GitHub worker
+After=network.target
+
+[Service]
+Type=simple
+User=%u
+WorkingDirectory=/home/retomy/retomY
+ExecStart=/home/retomy/retomY/.venv/bin/python /home/retomy/retomY/scraper/batch_process.py work --token-file /home/retomy/retomY/scraper/.githubtokens --redis-url redis://localhost:6379/0 --queue github_repos --exit-empty
+Restart=always
+RestartSec=5
+StartLimitBurst=5
+StartLimitIntervalSec=60
+
+[Install]
+WantedBy=multi-user.target

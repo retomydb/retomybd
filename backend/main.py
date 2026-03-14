@@ -23,6 +23,8 @@ from core.config import get_settings
 from core.storage import ensure_containers
 from routers import auth, datasets, users, purchases, dashboard, payments
 from routers import repos, models, spaces, discussions, organizations, collections
+from routers import model_analytics
+from routers import inference
 from fastapi.staticfiles import StaticFiles
 
 settings = get_settings()
@@ -119,7 +121,10 @@ app.include_router(dashboard.router, prefix=API_PREFIX)
 app.include_router(payments.router, prefix=API_PREFIX)
 
 # Hub routers (HuggingFace-style)
+# inference & model_analytics MUST come before models — models has /{owner}/{slug} catch-all
 app.include_router(repos.router, prefix=API_PREFIX)
+app.include_router(inference.router, prefix=API_PREFIX)
+app.include_router(model_analytics.router, prefix=API_PREFIX)
 app.include_router(models.router, prefix=API_PREFIX)
 app.include_router(spaces.router, prefix=API_PREFIX)
 app.include_router(discussions.router, prefix=API_PREFIX)

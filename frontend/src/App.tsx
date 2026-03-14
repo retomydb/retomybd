@@ -32,6 +32,16 @@ import CreateModelPage from './pages/CreateModelPage';
 import SpacesBrowsePage from './pages/SpacesBrowsePage';
 import SpaceDetailPage from './pages/SpaceDetailPage';
 
+// Model Hub sub-pages
+import ModelsLayout from './components/ModelsLayout';
+import ModelSearchPage from './pages/ModelSearchPage';
+import ModelLeaderboardsPage from './pages/ModelLeaderboardsPage';
+import ModelComparePage from './pages/ModelComparePage';
+import ModelTrendsPage from './pages/ModelTrendsPage';
+import ModelCollectionsPage from './pages/ModelCollectionsPage';
+import ModelApiExplorerPage from './pages/ModelApiExplorerPage';
+import ModelQualityPage from './pages/ModelQualityPage';
+
 // Layout with Navbar + Footer
 function Layout() {
   return (
@@ -162,7 +172,15 @@ function AppInner() {
           <Route path="/docs" element={<DocsPage />} />
 
           {/* Hub routes — Models & Spaces */}
-          <Route path="/models" element={<ModelBrowsePage />} />
+          <Route path="/models" element={<ModelsLayout />}>
+            <Route index element={<ModelSearchPage />} />
+            <Route path="leaderboards" element={<ModelLeaderboardsPage />} />
+            <Route path="compare" element={<ModelComparePage />} />
+            <Route path="trends" element={<ModelTrendsPage />} />
+            <Route path="collections" element={<ModelCollectionsPage />} />
+            <Route path="api" element={<ModelApiExplorerPage />} />
+            <Route path="quality" element={<ModelQualityPage />} />
+          </Route>
           <Route path="/models/new" element={
             <PrivateRoute><CreateModelPage /></PrivateRoute>
           } />

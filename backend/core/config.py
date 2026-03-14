@@ -57,6 +57,9 @@ class Settings(BaseSettings):
     STRIPE_PLATFORM_ACCOUNT_ID: str = ""
     FRONTEND_URL: str = "http://localhost:3000"
 
+    # HuggingFace Inference
+    HF_TOKEN: str = ""
+
     # Airflow
     AIRFLOW_HOST: str = "localhost"
     AIRFLOW_PORT: int = 8080
@@ -77,6 +80,9 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(",")]
+
+    # Local inference (self-hosted Llama / TGI / webui)
+    LOCAL_INFERENCE_URL: str = ""  # e.g. http://127.0.0.1:5000/api/v1/generate
 
     @property
     def allowed_file_types_list(self) -> list[str]:

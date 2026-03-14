@@ -74,12 +74,21 @@ async def browse_models(
 
     where = " AND ".join(conditions)
 
-    count_sql = f"""
-        SELECT COUNT(*) AS cnt
-        FROM retomy.Repositories r
-        LEFT JOIN retomy.ModelMetadata mm ON mm.RepoId = r.RepoId
-        WHERE {where}
-    """
+    # Only JOIN ModelMetadata in the COUNT when we actually filter on mm columns
+    needs_mm_join = any(f for f in (task, framework, language, library))
+    if needs_mm_join:
+        count_sql = f"""
+            SELECT COUNT(*) AS cnt
+            FROM retomy.Repositories r WITH (NOLOCK)
+            LEFT JOIN retomy.ModelMetadata mm WITH (NOLOCK) ON mm.RepoId = r.RepoId
+            WHERE {where}
+        """
+    else:
+        count_sql = f"""
+            SELECT COUNT(*) AS cnt
+            FROM retomy.Repositories r WITH (NOLOCK)
+            WHERE {where}
+        """
     total = execute_query(count_sql, params[:], fetch="one")
     total_count = total["cnt"] if total else 0
 
@@ -94,9 +103,9 @@ async def browse_models(
                mm.Language AS ModelLanguage, mm.ParameterCount, mm.PipelineTag,
                mm.HostingType, mm.OriginalModelId, mm.GithubStars,
                u.DisplayName AS owner_name, u.Slug AS owner_slug
-        FROM retomy.Repositories r
-        LEFT JOIN retomy.ModelMetadata mm ON mm.RepoId = r.RepoId
-        LEFT JOIN retomy.Users u ON u.UserId = r.OwnerId AND r.OwnerType = 'user'
+        FROM retomy.Repositories r WITH (NOLOCK)
+        LEFT JOIN retomy.ModelMetadata mm WITH (NOLOCK) ON mm.RepoId = r.RepoId
+        LEFT JOIN retomy.Users u WITH (NOLOCK) ON u.UserId = r.OwnerId AND r.OwnerType = 'user'
         WHERE {where}
         ORDER BY {sort_col}
         OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
@@ -233,15 +242,15 @@ async def create_model(
 async def model_filter_options():
     """Return available filter values for the browse UI."""
     tasks = execute_query(
-        "SELECT DISTINCT mm.Task FROM retomy.ModelMetadata mm WHERE mm.Task IS NOT NULL ORDER BY mm.Task",
+        "SELECT DISTINCT mm.Task FROM retomy.ModelMetadata mm WITH (NOLOCK) WHERE mm.Task IS NOT NULL ORDER BY mm.Task",
         fetch="all",
     )
     frameworks = execute_query(
-        "SELECT DISTINCT mm.Framework FROM retomy.ModelMetadata mm WHERE mm.Framework IS NOT NULL ORDER BY mm.Framework",
+        "SELECT DISTINCT mm.Framework FROM retomy.ModelMetadata mm WITH (NOLOCK) WHERE mm.Framework IS NOT NULL ORDER BY mm.Framework",
         fetch="all",
     )
     languages = execute_query(
-        "SELECT DISTINCT mm.Language FROM retomy.ModelMetadata mm WHERE mm.Language IS NOT NULL ORDER BY mm.Language",
+        "SELECT DISTINCT mm.Language FROM retomy.ModelMetadata mm WITH (NOLOCK) WHERE mm.Language IS NOT NULL ORDER BY mm.Language",
         fetch="all",
     )
     # Model categories (pipeline tags) with counts
@@ -249,8 +258,8 @@ async def model_filter_options():
         categories = execute_query(
             """
             SELECT mm.PipelineTag AS name, COUNT(*) AS count
-            FROM retomy.Repositories r
-            LEFT JOIN retomy.ModelMetadata mm ON mm.RepoId = r.RepoId
+            FROM retomy.Repositories r WITH (NOLOCK)
+            LEFT JOIN retomy.ModelMetadata mm WITH (NOLOCK) ON mm.RepoId = r.RepoId
             WHERE r.RepoType = 'model' AND r.DeletedAt IS NULL AND mm.PipelineTag IS NOT NULL
             GROUP BY mm.PipelineTag
             ORDER BY COUNT(*) DESC
@@ -308,9 +317,9 @@ async def get_model(owner: str, model_slug: str, user: dict = Depends(get_curren
                   mm.GithubBranch, mm.GithubLastSyncAt, mm.GithubReadme,
                   mm.GithubStars, mm.GithubTopics, mm.UsageGuide,
                   u.DisplayName AS owner_name, u.Slug AS owner_slug, u.AvatarUrl
-           FROM retomy.Repositories r
-           LEFT JOIN retomy.ModelMetadata mm ON mm.RepoId = r.RepoId
-           LEFT JOIN retomy.Users u ON u.UserId = r.OwnerId AND r.OwnerType = 'user'
+           FROM retomy.Repositories r WITH (NOLOCK)
+           LEFT JOIN retomy.ModelMetadata mm WITH (NOLOCK) ON mm.RepoId = r.RepoId
+           LEFT JOIN retomy.Users u WITH (NOLOCK) ON u.UserId = r.OwnerId AND r.OwnerType = 'user'
            WHERE (u.Slug = ? OR r.OwnerId = ?) AND r.Slug = ? AND r.RepoType = 'model' AND r.DeletedAt IS NULL""",
         [owner, owner, model_slug], fetch="one",
     )

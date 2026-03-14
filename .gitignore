@@ -58,3 +58,19 @@ tools/
 *.tmp
 *.bak
 scripts/make_admin.py
+
+# ── Scraper secrets & data ──────────────────────────────
+scraper/.githubtokens
+scraper/.replicatetoken
+scraper/.replicatetoken_worker
+scraper/*.jsonl
+scraper/discovery_checkpoint.json
+scraper/import_progress.json
+scraper/mass_state.json
+scraper/existing_slugs.txt
+scraper/*.out
+scraper/*.log
+*.pid
+
+# ── Animation build artefacts ───────────────────────────
+Animation/

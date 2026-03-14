@@ -10,6 +10,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 interface ModelItem {
   RepoId: string;
+  OwnerId?: string;
   Name: string;
   Slug: string;
   Description: string | null;
@@ -284,7 +285,7 @@ export default function ModelBrowsePage() {
             {models.map(model => (
               <Link
                 key={model.RepoId}
-                to={`/models/${model.owner_slug || model.RepoId}/${model.Slug}`}
+                to={`/models/${model.owner_slug || model.OwnerId || model.RepoId}/${model.Slug}`}
                 className="group relative bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 hover:border-violet-500/30 hover:bg-white/[0.05] transition-all duration-200"
               >
                 {/* Model name */}

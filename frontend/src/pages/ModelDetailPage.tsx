@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { HiCube, HiDownload, HiHeart, HiCode, HiDocumentText, HiChat, HiFolder, HiClock, HiTag, HiClipboardCopy, HiExternalLink } from 'react-icons/hi';
+import { HiCube, HiDownload, HiHeart, HiCode, HiDocumentText, HiChat, HiFolder, HiClock, HiTag, HiClipboardCopy, HiExternalLink, HiLightningBolt } from 'react-icons/hi';
+import { FaGithub } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import ModelPlayground from '../components/ModelPlayground';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
@@ -40,6 +42,7 @@ interface ModelData {
   SafeTensors: boolean | null;
   InferenceEnabled: boolean | null;
   OriginalModelId: string | null;
+  GithubRepoUrl?: string | null;
   // Rich content
   GithubReadme: string | null;
   UsageGuide: string | null;
@@ -128,7 +131,7 @@ export default function ModelDetailPage() {
   const [model, setModel] = useState<ModelData | null>(null);
   const [files, setFiles] = useState<RepoFile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'card' | 'files' | 'community'>('card');
+  const [activeTab, setActiveTab] = useState<'card' | 'inference' | 'files' | 'community'>('card');
   const [liked, setLiked] = useState(false);
 
   useEffect(() => {
@@ -246,7 +249,15 @@ export default function ModelDetailPage() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                  <img src="https://huggingface.co/front/assets/huggingface_logo.svg" alt="Hugging Face" className="w-4 h-4 inline-block" />
+                  {model.HostingType === 'huggingface' ? (
+                    <a href={model.OriginalModelId ? `https://huggingface.co/${model.OriginalModelId}` : undefined} target="_blank" rel="noopener noreferrer">
+                      <img src="https://huggingface.co/front/assets/huggingface_logo.svg" alt="Hugging Face" className="w-4 h-4 inline-block" />
+                    </a>
+                  ) : (
+                    <a href={model.GithubRepoUrl || (model.OriginalModelId ? `https://github.com/${model.OriginalModelId}` : `https://github.com/${model.owner_slug || model.owner_name}/${model.Name}`)} target="_blank" rel="noopener noreferrer">
+                      <FaGithub className="w-4 h-4 inline-block" />
+                    </a>
+                  )}
                   <span>{displayOriginalId(model.OriginalModelId, model.owner_name, model.Name)}</span>
                 </h1>
                 {model.Description && <p className="text-white/40 text-sm mt-1 max-w-2xl">{model.Description}</p>}
@@ -286,7 +297,7 @@ export default function ModelDetailPage() {
       <div className="border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex gap-1">
-            {(['card', 'files', 'community'] as const).map(tab => (
+            {(['card', 'inference', 'files', 'community'] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -294,9 +305,10 @@ export default function ModelDetailPage() {
               >
                 <span className="flex items-center gap-1.5">
                   {tab === 'card' && <HiDocumentText className="w-4 h-4" />}
+                  {tab === 'inference' && <HiLightningBolt className="w-4 h-4" />}
                   {tab === 'files' && <HiFolder className="w-4 h-4" />}
                   {tab === 'community' && <HiChat className="w-4 h-4" />}
-                  {tab === 'card' ? 'Model Card' : tab === 'files' ? `Files (${files.length})` : 'Community'}
+                  {tab === 'card' ? 'Model Card' : tab === 'inference' ? 'Try It' : tab === 'files' ? `Files (${files.length})` : 'Community'}
                 </span>
                 {activeTab === tab && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-500 to-purple-500" />}
               </button>
@@ -348,6 +360,35 @@ export default function ModelDetailPage() {
                             ) : (
                               <code className={className} {...props}>{children}</code>
                             );
+                          },
+                          img({ src, alt, ...props }) {
+                            let resolved = src || '';
+                            // if image src is relative, resolve to raw.githubusercontent using repo info
+                            const isRelative = resolved && !/^https?:\/\//i.test(resolved) && !resolved.startsWith('data:');
+                            if (isRelative) {
+                              const owner = model.GithubOwner || (model.OriginalModelId ? model.OriginalModelId.split('/')[0] : model.owner_slug);
+                              const repo = model.GithubRepoName || (model.OriginalModelId ? model.OriginalModelId.split('/')[1] : model.Name);
+                              const branch = model.GithubBranch || 'main';
+                              if (owner && repo) {
+                                const path = resolved.replace(/^\//, '');
+                                resolved = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
+                              }
+                            }
+                            return (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={resolved} alt={alt as string} className="max-w-full rounded-lg mx-auto my-4" {...props} />
+                            );
+                          },
+                          p({ children }) {
+                            return <p className="mb-4">{children}</p>;
+                          },
+                          a({ href, children, ...props }) {
+                            const isExternal = href && /^https?:\/\//i.test(href as string);
+                            return (
+                              <a href={href} target={isExternal ? '_blank' : undefined} rel={isExternal ? 'noopener noreferrer' : undefined} {...props}>
+                                {children}
+                              </a>
+                            );
                           }
                         }}
                       >
@@ -398,6 +439,17 @@ export default function ModelDetailPage() {
                   } catch { return null; }
                 })()}
               </div>
+            )}
+
+            {activeTab === 'inference' && (
+              <ModelPlayground
+                owner={owner || ''}
+                slug={slug || ''}
+                task={model.Task}
+                pipelineTag={model.PipelineTag}
+                originalModelId={model.OriginalModelId}
+                hostingType={model.HostingType}
+              />
             )}
 
             {activeTab === 'files' && (
@@ -470,7 +522,7 @@ export default function ModelDetailPage() {
                   </code>
                 </div>
               ) : null}
-              {model.OriginalModelId && (
+              {model.HostingType === 'huggingface' && model.OriginalModelId ? (
                 <a
                   href={`https://huggingface.co/${model.OriginalModelId}`}
                   target="_blank"
@@ -479,7 +531,16 @@ export default function ModelDetailPage() {
                 >
                   <HiExternalLink className="w-3.5 h-3.5" /> View on Hugging Face
                 </a>
-              )}
+              ) : model.HostingType === 'github' ? (
+                <a
+                  href={model.GithubRepoUrl || (model.OriginalModelId ? `https://github.com/${model.OriginalModelId}` : `https://github.com/${model.owner_slug || model.owner_name}/${model.Name}`)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs text-white/70 hover:text-white/90 mb-3 transition-colors"
+                >
+                  <FaGithub className="w-3.5 h-3.5" /> View on GitHub
+                </a>
+              ) : null}
               {model.PricingModel === 'one_time' && model.Price > 0 ? (
                 <button className="w-full py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity">
                   Purchase — ${model.Price.toFixed(2)}
@@ -487,6 +548,14 @@ export default function ModelDetailPage() {
               ) : (
                 <button className="w-full py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity">
                   Download Model
+                </button>
+              )}
+              {model.HostingType === 'huggingface' && (
+                <button
+                  onClick={() => setActiveTab('inference')}
+                  className="w-full mt-2 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                >
+                  <HiLightningBolt className="w-4 h-4" /> Try this Model
                 </button>
               )}
             </div>

@@ -7,7 +7,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
     },
@@ -15,6 +15,18 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': '/src',
+    },
+  },
+  build: {
+    chunkSizeWarningLimit: 2500,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split heavy inference runtime into its own chunk (lazy-loaded)
+          'onnx-runtime': ['onnxruntime-web'],
+          'transformers': ['@huggingface/transformers'],
+        },
+      },
     },
   },
 });

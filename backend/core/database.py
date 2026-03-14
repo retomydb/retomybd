@@ -92,11 +92,17 @@ def execute_sp(sp_name: str, params: dict = None, fetch: str = "all"):
 
 
 def execute_query(sql: str, params: list = None, fetch: str = "all"):
-    """Execute a raw SQL query."""
+    """Execute a raw SQL query.  Read queries use READ UNCOMMITTED to avoid
+    blocking on concurrent INSERT/UPDATE locks from ingestion workers."""
     conn = get_db_connection()
     cursor = conn.cursor()
 
     try:
+        # Use READ UNCOMMITTED for SELECT queries to prevent lock contention
+        is_read = fetch != "none"
+        if is_read:
+            cursor.execute("SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED")
+
         if params:
             cursor.execute(sql, params)
         else:

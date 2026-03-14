@@ -393,7 +393,7 @@ export default function SellerDashboardPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {models.map((m: any) => (
                   <div key={m.RepoId} className="min-w-0">
-                    <Link to={`/models/${m.owner_slug || m.OwnerId}/${m.Slug}`} className="group block relative bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 hover:border-violet-500/30 hover:bg-white/[0.05] transition-all duration-200">
+                    <Link to={`/models/${m.owner_slug || m.OwnerId || m.RepoId}/${m.Slug}`} className="group block relative bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 hover:border-violet-500/30 hover:bg-white/[0.05] transition-all duration-200">
                       <div className="flex items-start justify-between gap-2 mb-1.5">
                         <h3 className="text-[13px] font-semibold text-white group-hover:text-violet-300 transition-colors truncate flex-1">
                           <span className="text-white/40 font-normal">{m.owner_name || 'you'} / </span>
@@ -414,8 +414,8 @@ export default function SellerDashboardPage() {
                     </Link>
                     <div className="flex items-center justify-between mt-2 text-xs px-1">
                       <div className="flex gap-2">
-                        <Link to={`/models/${m.owner_slug || m.OwnerId}/${m.Slug}`} className="text-indigo-400 hover:text-indigo-300 transition-colors">View</Link>
-                        <Link to={`/models/${m.owner_slug || m.OwnerId}/${m.Slug}`} className="text-amber-400 hover:text-amber-300 transition-colors">Manage</Link>
+                        <Link to={`/models/${m.owner_slug || m.OwnerId || m.RepoId}/${m.Slug}`} className="text-indigo-400 hover:text-indigo-300 transition-colors">View</Link>
+                        <Link to={`/models/${m.owner_slug || m.OwnerId || m.RepoId}/${m.Slug}`} className="text-amber-400 hover:text-amber-300 transition-colors">Manage</Link>
                       </div>
                       <button
                         onClick={async () => {

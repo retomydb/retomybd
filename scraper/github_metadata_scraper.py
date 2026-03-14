@@ -48,17 +48,15 @@ def parse_search_page(html: str) -> List[str]:
     """Return list of repo URLs found on a GitHub search results page."""
     soup = BeautifulSoup(html, "lxml")
     links = []
-    # Try well-known selector
-    for a in soup.select('a.v-align-middle'):
-        href = a.get('href')
-        if href and href.count('/') >= 2:
-            links.append('https://github.com' + href.strip())
-    # Fallback: repo-list items
-    if not links:
-        for a in soup.select('ul.repo-list li a'):
-            href = a.get('href')
-            if href and href.count('/') >= 2:
-                links.append('https://github.com' + href.strip())
+    # Robust fallback: find any anchor with a path like /owner/repo
+    for a in soup.find_all('a', href=True):
+        href = a.get('href').strip()
+        # match exact repo path like /owner/repo or /owner/repo/
+        if re.match(r'^/[^/]+/[^/]+/?$', href):
+            # exclude topic and search pseudo-paths
+            if href.startswith('/topics') or href.startswith('/search'):
+                continue
+            links.append('https://github.com' + href.rstrip('/'))
     # Dedupe while preserving order
     seen = set()
     out = []

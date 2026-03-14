@@ -1,11 +1,12 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   HiSearch, HiChartBar, HiScale, HiTrendingUp,
-  HiCollection, HiCode, HiShieldCheck, HiCube,
+  HiCollection, HiCode, HiShieldCheck, HiCube, HiLightningBolt,
 } from 'react-icons/hi';
 
 const tabs = [
   { to: '/models',              label: 'Search',       icon: HiSearch,      exact: true },
+  { to: '/models/runnable',     label: 'Runnable',     icon: HiLightningBolt },
   { to: '/models/leaderboards', label: 'Leaderboards', icon: HiChartBar },
   { to: '/models/compare',      label: 'Compare',      icon: HiScale },
   { to: '/models/trends',       label: 'Trends',       icon: HiTrendingUp },

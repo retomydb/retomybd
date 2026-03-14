@@ -31,6 +31,7 @@ async def browse_models(
     framework: str = Query(None),
     language: str = Query(None),
     library: str = Query(None),
+    runnable: bool = Query(False),
     sort: str = Query("trending", pattern="^(trending|downloads|likes|created|updated)$"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -46,6 +47,24 @@ async def browse_models(
         params.append(user_id)
     else:
         conditions.append("r.Private = 0")
+
+    # Filter for browser-runnable models (ONNX-compatible, Transformers.js-ready)
+    if runnable:
+        runnable_tasks = [
+            'text-generation', 'text2text-generation', 'text-classification',
+            'token-classification', 'question-answering', 'fill-mask',
+            'summarization', 'translation', 'feature-extraction',
+            'zero-shot-classification', 'sentence-similarity',
+            'image-classification', 'automatic-speech-recognition',
+        ]
+        task_placeholders = ','.join(['?'] * len(runnable_tasks))
+        conditions.append(f"""(
+            mm.OriginalModelId LIKE 'Xenova/%'
+            OR mm.OriginalModelId LIKE 'onnx-community/%'
+            OR mm.Framework = 'onnx'
+            OR (mm.Task IN ({task_placeholders}) AND mm.Framework IN ('onnx', 'safetensors', 'pytorch'))
+        )""")
+        params.extend(runnable_tasks)
 
     if search:
         conditions.append("(r.Name LIKE ? OR r.Description LIKE ?)")
@@ -75,7 +94,7 @@ async def browse_models(
     where = " AND ".join(conditions)
 
     # Only JOIN ModelMetadata in the COUNT when we actually filter on mm columns
-    needs_mm_join = any(f for f in (task, framework, language, library))
+    needs_mm_join = any(f for f in (task, framework, language, library)) or runnable
     if needs_mm_join:
         count_sql = f"""
             SELECT COUNT(*) AS cnt

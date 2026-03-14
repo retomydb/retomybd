@@ -41,6 +41,7 @@ import ModelTrendsPage from './pages/ModelTrendsPage';
 import ModelCollectionsPage from './pages/ModelCollectionsPage';
 import ModelApiExplorerPage from './pages/ModelApiExplorerPage';
 import ModelQualityPage from './pages/ModelQualityPage';
+import ModelRunnablePage from './pages/ModelRunnablePage';
 
 // Layout with Navbar + Footer
 function Layout() {
@@ -174,6 +175,7 @@ function AppInner() {
           {/* Hub routes — Models & Spaces */}
           <Route path="/models" element={<ModelsLayout />}>
             <Route index element={<ModelSearchPage />} />
+            <Route path="runnable" element={<ModelRunnablePage />} />
             <Route path="leaderboards" element={<ModelLeaderboardsPage />} />
             <Route path="compare" element={<ModelComparePage />} />
             <Route path="trends" element={<ModelTrendsPage />} />

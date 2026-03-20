@@ -3,11 +3,24 @@ import { Link, useSearchParams } from 'react-router-dom';
 import {
   HiSearch, HiCube, HiDownload, HiHeart, HiAdjustments,
   HiClock, HiChevronLeft, HiChevronRight, HiStar, HiPlay,
-  HiLightningBolt, HiChip,
+  HiLightningBolt, HiChip, HiX, HiServer,
 } from 'react-icons/hi';
 import { BROWSER_SUPPORTED_TASKS, SUGGESTED_MODELS } from '../services/browserInference';
+import ModelPlayground from '../components/ModelPlayground';
+import OllamaPlayground from '../components/OllamaPlayground';
 
 const API = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+
+// ── Ollama model type ────────────────────────────────────────────────────────
+interface OllamaModel {
+  name: string;
+  model: string;
+  size_human: string;
+  parameter_size: string;
+  family: string;
+  quantization: string;
+  can_load?: boolean;
+}
 
 interface ModelItem {
   RepoId: string;
@@ -91,6 +104,31 @@ export default function ModelRunnablePage() {
   const [page, setPage] = useState(parseInt(sp.get('page') || '1'));
   const [showFilters, setShowFilters] = useState(false);
 
+  // Inline playground state — when a user clicks a Quick Start model
+  const [playgroundModel, setPlaygroundModel] = useState<{
+    id: string; task: string; label: string;
+  } | null>(null);
+
+  // Ollama state
+  const [ollamaModels, setOllamaModels] = useState<OllamaModel[]>([]);
+  const [ollamaOnline, setOllamaOnline] = useState(false);
+  const [activeOllamaModel, setActiveOllamaModel] = useState<OllamaModel | null>(null);
+
+  // ── Fetch Ollama models on mount ──
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${API}/ollama/models`);
+        if (!res.ok) throw new Error('offline');
+        const data = await res.json();
+        setOllamaModels(data.models || []);
+        setOllamaOnline(true);
+      } catch {
+        setOllamaOnline(false);
+      }
+    })();
+  }, []);
+
   const debouncedSearch = useDebounce(search, 350);
 
   const fetchModels = useCallback(async () => {
@@ -127,17 +165,18 @@ export default function ModelRunnablePage() {
             <HiLightningBolt className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white">Browser-Runnable Models</h2>
+            <h2 className="text-lg font-bold text-white">Runnable Models</h2>
             <p className="text-sm text-white/50 mt-1 max-w-2xl">
-              These models run <strong className="text-emerald-400">entirely in your browser</strong> using WebAssembly and ONNX Runtime — 
-              no API keys, no server costs, no data leaves your device. Click "Try It" on any model to start.
+              Run models <strong className="text-emerald-400">in your browser</strong> via WebAssembly, or use <strong className="text-purple-400">server-side</strong> models 
+              powered by Ollama — large language models like Llama 3, DeepSeek Coder, and Qwen 2.5 run on the server with full GPU acceleration.
             </p>
-            <div className="flex items-center gap-4 mt-3 text-[11px] text-white/30">
-              <span className="flex items-center gap-1"><HiChip className="w-3.5 h-3.5 text-emerald-400/60" /> Powered by Transformers.js</span>
+            <div className="flex items-center gap-4 mt-3 text-[11px] text-white/30 flex-wrap">
+              <span className="flex items-center gap-1"><HiChip className="w-3.5 h-3.5 text-emerald-400/60" /> Browser: Transformers.js</span>
+              {ollamaOnline && (
+                <span className="flex items-center gap-1"><HiServer className="w-3.5 h-3.5 text-purple-400/60" /> Server: {ollamaModels.length} Ollama model{ollamaModels.length !== 1 ? 's' : ''}</span>
+              )}
               <span>•</span>
-              <span>Models cached locally after first download</span>
-              <span>•</span>
-              <span>{total.toLocaleString()} runnable models found</span>
+              <span>{total.toLocaleString()} browser-runnable models</span>
             </div>
           </div>
         </div>
@@ -149,11 +188,53 @@ export default function ModelRunnablePage() {
           <HiPlay className="w-4 h-4 text-emerald-400" /> Quick Start — Verified Compatible Models
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {allSuggestedModels.slice(0, 8).map(m => (
-            <Link
+          {/* ── Ollama server-side models (shown first) ── */}
+          {ollamaOnline && ollamaModels.map(m => {
+            const canLoad = m.can_load !== false;
+            return (
+            <button
+              key={`ollama-${m.name}`}
+              onClick={() => { if (canLoad) { setActiveOllamaModel(m); setPlaygroundModel(null); } }}
+              disabled={!canLoad}
+              className={`group text-left border rounded-xl p-3 transition-all ${
+                !canLoad
+                  ? 'opacity-50 cursor-not-allowed bg-white/[0.02] border-white/5'
+                  : activeOllamaModel?.name === m.name
+                    ? 'border-purple-500/40 bg-purple-500/10'
+                    : 'bg-purple-500/[0.06] border-purple-500/10 hover:border-purple-500/30 hover:bg-purple-500/10'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1.5">
+                <span className={`text-[11px] font-semibold truncate ${canLoad ? 'text-purple-400/80' : 'text-white/30'}`}>{m.name}</span>
+                <span className={`flex-shrink-0 ml-2 text-[9px] px-1.5 py-0.5 rounded font-semibold flex items-center gap-1 ${
+                  canLoad ? 'bg-purple-500/20 text-purple-300' : 'bg-red-500/15 text-red-400/70'
+                }`}>
+                  {canLoad ? <HiServer className="w-2.5 h-2.5" /> : null} {m.size_human}
+                </span>
+              </div>
+              <p className="text-[11px] text-white/40 truncate">{m.family} · {m.parameter_size} · {m.quantization}</p>
+              <div className="flex items-center justify-between mt-2">
+                <span className={`text-[10px] flex items-center gap-1 ${canLoad ? 'text-purple-400/50' : 'text-red-400/50'}`}>
+                  <HiServer className="w-3 h-3" /> {canLoad ? 'Server-side' : 'Needs more RAM'}
+                </span>
+                {canLoad && (
+                  <span className="text-[10px] text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity font-medium">
+                    Try It →
+                  </span>
+                )}
+              </div>
+            </button>
+            );
+          })}
+
+          {/* ── Browser ONNX models ── */}
+          {allSuggestedModels.slice(0, Math.max(4, 8 - ollamaModels.length)).map(m => (
+            <button
               key={m.id}
-              to={`/models/${m.id.split('/')[0]}/${m.id.split('/')[1]}`}
-              className="group bg-emerald-500/[0.06] border border-emerald-500/10 rounded-xl p-3 hover:border-emerald-500/30 hover:bg-emerald-500/10 transition-all"
+              onClick={() => { setPlaygroundModel({ id: m.id, task: m.task, label: m.label }); setActiveOllamaModel(null); }}
+              className={`group text-left bg-emerald-500/[0.06] border rounded-xl p-3 hover:border-emerald-500/30 hover:bg-emerald-500/10 transition-all ${
+                playgroundModel?.id === m.id ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-emerald-500/10'
+              }`}
             >
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[11px] font-semibold text-emerald-400/80 truncate">{m.id}</span>
@@ -168,10 +249,63 @@ export default function ModelRunnablePage() {
                   Try It →
                 </span>
               </div>
-            </Link>
+            </button>
           ))}
         </div>
       </div>
+
+      {/* ─── Inline Playground (opens when Quick Start model clicked) ── */}
+      {activeOllamaModel && (
+        <div className="mb-6 rounded-2xl border border-purple-500/20 overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3 border-b border-white/5">
+            <div className="flex items-center gap-3">
+              <HiServer className="w-4 h-4 text-purple-400" />
+              <div>
+                <span className="text-sm font-semibold text-white">{activeOllamaModel.name}</span>
+                <span className="text-xs text-white/30 ml-2">{activeOllamaModel.parameter_size} · {activeOllamaModel.family}</span>
+              </div>
+              <span className="text-[9px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-bold uppercase tracking-wider">
+                Server-Side
+              </span>
+            </div>
+            <button onClick={() => setActiveOllamaModel(null)} className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-all">
+              <HiX className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="p-4">
+            <OllamaPlayground
+              model={activeOllamaModel.name}
+              label={activeOllamaModel.name}
+              parameterSize={activeOllamaModel.parameter_size}
+            />
+          </div>
+        </div>
+      )}
+
+      {playgroundModel && (
+        <div className="mb-6 rounded-2xl border border-emerald-500/20 bg-white/[0.02] overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3 border-b border-white/5 bg-emerald-500/[0.04]">
+            <div className="flex items-center gap-3">
+              <HiLightningBolt className="w-4 h-4 text-emerald-400" />
+              <div>
+                <span className="text-sm font-semibold text-white">{playgroundModel.label}</span>
+                <span className="text-xs text-white/30 ml-2">{playgroundModel.id}</span>
+              </div>
+            </div>
+            <button onClick={() => setPlaygroundModel(null)} className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-all">
+              <HiX className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="p-4">
+            <ModelPlayground
+              owner={playgroundModel.id.split('/')[0]}
+              slug={playgroundModel.id.split('/')[1]}
+              task={playgroundModel.task}
+              originalModelId={playgroundModel.id}
+            />
+          </div>
+        </div>
+      )}
 
       {/* ─── Search + Controls ───────────────────────────────── */}
       <div className="flex flex-col sm:flex-row gap-3 mb-5">
@@ -274,7 +408,7 @@ export default function ModelRunnablePage() {
                   )}
                 </div>
 
-                <Link to={`/models/${m.owner_slug || m.OwnerId || m.RepoId}/${m.Slug}`} className="block">
+                <Link to={`/models/${m.owner_slug || m.OwnerId || m.RepoId}/${m.Slug}?tab=inference`} className="block">
                   <h3 className="text-[13px] font-semibold text-white group-hover:text-emerald-300 truncate pr-20 transition-colors">
                     {m.OriginalModelId || `${m.owner_name || 'user'}/${m.Name}`}
                   </h3>
@@ -309,16 +443,6 @@ export default function ModelRunnablePage() {
                     </div>
                   )}
                 </Link>
-
-                {/* Try It button */}
-                <div className="mt-3 pt-3 border-t border-white/5">
-                  <Link
-                    to={`/models/${m.owner_slug || m.OwnerId || m.RepoId}/${m.Slug}?tab=inference`}
-                    className="flex items-center justify-center gap-1.5 w-full py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[12px] font-semibold hover:bg-emerald-500/20 hover:border-emerald-500/30 transition-all"
-                  >
-                    <HiPlay className="w-3.5 h-3.5" /> Try It in Browser
-                  </Link>
-                </div>
               </div>
             );
           })}

@@ -84,6 +84,9 @@ class Settings(BaseSettings):
     # Local inference (self-hosted Llama / TGI / webui)
     LOCAL_INFERENCE_URL: str = ""  # e.g. http://127.0.0.1:5000/api/v1/generate
 
+    # Ollama (local LLM server in Docker)
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+
     @property
     def allowed_file_types_list(self) -> list[str]:
         return [t.strip() for t in self.ALLOWED_FILE_TYPES.split(",")]

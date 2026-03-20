@@ -10,10 +10,27 @@ from core.config import get_settings
 import structlog
 import uuid
 import re
+import time as _time
 
 logger = structlog.get_logger()
 settings = get_settings()
 router = APIRouter(prefix="/models", tags=["Models"])
+
+# ── In-memory count cache (avoids expensive COUNT on every page load) ─────────
+_count_cache: dict[str, tuple[int, float]] = {}
+_COUNT_CACHE_TTL = 300  # 5 minutes
+
+
+def _cached_count(cache_key: str, sql: str, params: list) -> int:
+    """Return cached total_count or execute & cache."""
+    now = _time.time()
+    cached = _count_cache.get(cache_key)
+    if cached and now - cached[1] < _COUNT_CACHE_TTL:
+        return cached[0]
+    result = execute_query(sql, params, fetch="one")
+    count = result["cnt"] if result else 0
+    _count_cache[cache_key] = (count, now)
+    return count
 
 
 def _slugify(text: str) -> str:
@@ -49,22 +66,14 @@ async def browse_models(
         conditions.append("r.Private = 0")
 
     # Filter for browser-runnable models (ONNX-compatible, Transformers.js-ready)
+    # Uses metadata index — avoids slow Tags LIKE '%onnx%' full-table scan
     if runnable:
-        runnable_tasks = [
-            'text-generation', 'text2text-generation', 'text-classification',
-            'token-classification', 'question-answering', 'fill-mask',
-            'summarization', 'translation', 'feature-extraction',
-            'zero-shot-classification', 'sentence-similarity',
-            'image-classification', 'automatic-speech-recognition',
-        ]
-        task_placeholders = ','.join(['?'] * len(runnable_tasks))
-        conditions.append(f"""(
+        conditions.append("""(
             mm.OriginalModelId LIKE 'Xenova/%'
             OR mm.OriginalModelId LIKE 'onnx-community/%'
+            OR mm.OriginalModelId LIKE 'lmstudio-community/%'
             OR mm.Framework = 'onnx'
-            OR (mm.Task IN ({task_placeholders}) AND mm.Framework IN ('onnx', 'safetensors', 'pytorch'))
         )""")
-        params.extend(runnable_tasks)
 
     if search:
         conditions.append("(r.Name LIKE ? OR r.Description LIKE ?)")
@@ -99,7 +108,7 @@ async def browse_models(
         count_sql = f"""
             SELECT COUNT(*) AS cnt
             FROM retomy.Repositories r WITH (NOLOCK)
-            LEFT JOIN retomy.ModelMetadata mm WITH (NOLOCK) ON mm.RepoId = r.RepoId
+            INNER JOIN retomy.ModelMetadata mm WITH (NOLOCK) ON mm.RepoId = r.RepoId
             WHERE {where}
         """
     else:
@@ -108,8 +117,10 @@ async def browse_models(
             FROM retomy.Repositories r WITH (NOLOCK)
             WHERE {where}
         """
-    total = execute_query(count_sql, params[:], fetch="one")
-    total_count = total["cnt"] if total else 0
+
+    # Use cached count for common browse patterns (avoids repeated slow scans)
+    cache_key = f"models:{where}:{','.join(str(p) for p in params)}"
+    total_count = _cached_count(cache_key, count_sql, params[:])
 
     offset = (page - 1) * page_size
     data_sql = f"""

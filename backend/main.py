@@ -25,6 +25,10 @@ from routers import auth, datasets, users, purchases, dashboard, payments
 from routers import repos, models, spaces, discussions, organizations, collections
 from routers import model_analytics
 from routers import inference
+from routers import ollama
+from routers import chat_history
+from routers import rag
+from routers import agent
 from fastapi.staticfiles import StaticFiles
 
 settings = get_settings()
@@ -38,11 +42,11 @@ async def lifespan(app: FastAPI):
 
     # Initialize Azure Blob Storage containers (with timeout so server starts even if Azure is unreachable)
     try:
-        with concurrent.futures.ThreadPoolExecutor() as pool:
-            await asyncio.wait_for(
-                asyncio.get_event_loop().run_in_executor(pool, ensure_containers),
-                timeout=10,
-            )
+        pool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        await asyncio.wait_for(
+            asyncio.get_event_loop().run_in_executor(pool, ensure_containers),
+            timeout=10,
+        )
         logger.info("azure_storage_initialized")
     except asyncio.TimeoutError:
         logger.warning("azure_storage_init_timeout", msg="Timed out after 10s — starting without Azure")
@@ -124,6 +128,10 @@ app.include_router(payments.router, prefix=API_PREFIX)
 # inference & model_analytics MUST come before models — models has /{owner}/{slug} catch-all
 app.include_router(repos.router, prefix=API_PREFIX)
 app.include_router(inference.router, prefix=API_PREFIX)
+app.include_router(ollama.router, prefix=API_PREFIX)
+app.include_router(chat_history.router, prefix=API_PREFIX)
+app.include_router(rag.router, prefix=API_PREFIX)
+app.include_router(agent.router, prefix=API_PREFIX)
 app.include_router(model_analytics.router, prefix=API_PREFIX)
 app.include_router(models.router, prefix=API_PREFIX)
 app.include_router(spaces.router, prefix=API_PREFIX)

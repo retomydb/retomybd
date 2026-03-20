@@ -17,3 +17,8 @@ slowapi==0.1.9
 email-validator==2.1.0
 orjson==3.9.13
 stripe>=14.0.0
+PyPDF2>=3.0.0
+python-docx>=1.0.0
+openpyxl>=3.1.0
+python-pptx>=1.0.0
+chardet>=5.0.0

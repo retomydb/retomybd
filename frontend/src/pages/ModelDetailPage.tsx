@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { HiCube, HiDownload, HiHeart, HiCode, HiDocumentText, HiChat, HiFolder, HiClock, HiTag, HiClipboardCopy, HiExternalLink, HiLightningBolt } from 'react-icons/hi';
 import { FaGithub } from 'react-icons/fa';
 import toast from 'react-hot-toast';
@@ -43,6 +43,9 @@ interface ModelData {
   InferenceEnabled: boolean | null;
   OriginalModelId: string | null;
   GithubRepoUrl?: string | null;
+  GithubOwner?: string | null;
+  GithubRepoName?: string | null;
+  GithubBranch?: string | null;
   // Rich content
   GithubReadme: string | null;
   UsageGuide: string | null;
@@ -128,10 +131,12 @@ function UsageSnippets({ snippets }: { snippets: Record<string, string> }) {
 
 export default function ModelDetailPage() {
   const { owner, slug } = useParams<{ owner: string; slug: string }>();
+  const [sp] = useSearchParams();
+  const initialTab = (['card', 'inference', 'files', 'community'].includes(sp.get('tab') || '') ? sp.get('tab') : 'card') as 'card' | 'inference' | 'files' | 'community';
   const [model, setModel] = useState<ModelData | null>(null);
   const [files, setFiles] = useState<RepoFile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'card' | 'inference' | 'files' | 'community'>('card');
+  const [activeTab, setActiveTab] = useState<'card' | 'inference' | 'files' | 'community'>(initialTab);
   const [liked, setLiked] = useState(false);
 
   useEffect(() => {
